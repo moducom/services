@@ -1,0 +1,8 @@
+cmake-build-*/
+
+# CLion specific
+cmake-build-*/
+build-catch-*/
+**/.idea/workspace.xml
+**/.idea/vcs.xml
+
