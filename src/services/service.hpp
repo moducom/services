@@ -22,6 +22,24 @@ public:
     {}
 };
 
+
+class ServiceBase
+{
+public:
+    enum class ThreadPreference
+    {
+        Default,
+        PreferCooperative,
+        PreferThreaded,
+        RequireThreaded
+    };
+
+    static constexpr ThreadPreference threadPreference()
+    {
+        return ThreadPreference::Default;
+    }
+};
+
 namespace agents {
 
 template <class TService>
@@ -39,9 +57,14 @@ protected:
     }
 };
 
+template <class TService, ServiceBase::ThreadPreference>
+class SingleShot;
+
 template <class TService>
-class SingleShot : public Base<TService>
+class SingleShot<TService,
+        ServiceBase::ThreadPreference::PreferThreaded> : public Base<TService>
 {
+    typedef Base<TService> base_type;
 
 public:
 };
@@ -50,6 +73,7 @@ public:
 template <class TService>
 class Periodic : public Base<TService>
 {
+    typedef Base<TService> base_type;
 
 };
 
