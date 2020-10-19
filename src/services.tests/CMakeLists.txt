@@ -3,4 +3,7 @@ project(services_tests)
 
 set(CMAKE_CXX_STANDARD 14)
 
+include_directories(../services)
+add_subdirectory(../services build)
+
 add_executable(services_tests main.cpp)

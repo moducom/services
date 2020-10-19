@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
-project(src)
+project(services)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(src library.cpp library.h)
+add_library(services library.cpp library.h)
