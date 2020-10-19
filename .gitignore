@@ -6,3 +6,4 @@ build-catch-*/
 **/.idea/workspace.xml
 **/.idea/vcs.xml
 
+lib/conan/

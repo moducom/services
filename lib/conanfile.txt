@@ -1,0 +1,6 @@
+[requires]
+catch2/2.11.1
+entt/3.5.2
+
+[generators]
+cmake
