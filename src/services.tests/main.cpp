@@ -1,7 +1,4 @@
-#include <iostream>
+#define CATCH_CONFIG_MAIN
 
-int main()
-{
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
-}
+#include <catch2/catch.hpp>
+
