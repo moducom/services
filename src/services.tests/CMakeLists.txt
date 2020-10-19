@@ -9,5 +9,5 @@ add_subdirectory(../services build)
 include(${CMAKE_SOURCE_DIR}/../../lib/conan/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
-add_executable(services_tests main.cpp)
+add_executable(services_tests main.cpp misc.cpp)
 target_link_libraries(services_tests CONAN_PKG::entt CONAN_PKG::catch2)
