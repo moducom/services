@@ -44,8 +44,14 @@ public:
 
 namespace agents {
 
+// DEBT: Fix bad naming
+class BaseBase
+{
+
+};
+
 template <class TService>
-class Base
+class Base : public BaseBase
 {
     std::aligned_storage<sizeof(TService), alignof(TService)> raw;
 
@@ -77,6 +83,35 @@ class Periodic : public Base<TService>
 {
     typedef Base<TService> base_type;
 
+};
+
+}
+
+namespace managers {
+
+/// Handles both fixed-time and variable-time periodic interval agents
+/// Relies on external mechanism to call this at the right time
+template <class TTimeBase>
+class Scheduler
+{
+    struct Item
+    {
+        TTimeBase wakeup;
+        agents::BaseBase* agent;
+    };
+
+    std::vector<Item> agents;
+
+    const Item& first() const { return agents.front(); }
+
+    void sort()
+    {
+        std::sort_heap(agents.begin(), agents.end(),
+                       [&](const Item& a, const Item& b)
+                       {
+                            return a.wakeup > b.wakeup;
+                       });
+    }
 };
 
 }
