@@ -1,6 +1,7 @@
 #pragma once
 
 #include "semver.h"
+#include "stop_token.h"
 #include <utility>
 
 namespace moducom { namespace services {
@@ -39,6 +40,7 @@ public:
         return ThreadPreference::Default;
     }
 };
+
 
 namespace agents {
 

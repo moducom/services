@@ -9,4 +9,8 @@ TEST_CASE("misc")
     {
 
     }
+    SECTION("stop_source")
+    {
+        stop_source s;
+    }
 }
