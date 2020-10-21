@@ -2,6 +2,8 @@
 
 #include "semver.h"
 #include "stop_token.h"
+
+#include <algorithm>
 #include <utility>
 
 namespace moducom { namespace services {
@@ -78,11 +80,52 @@ public:
 };
 
 
+class PeriodicBase
+{
+public:
+    // relative time
+    // DEBT: change names to not conflict with absolute time named the same below
+    typedef int timebase_type;
+
+    virtual timebase_type run(timebase_type passed) = 0;
+};
+
+
+/// Fixed-period intervals
+/// \tparam TService
 template <class TService>
-class Periodic : public Base<TService>
+class Periodic :
+        public PeriodicBase,
+        public Base<TService>
+{
+    typedef Base<TService> base_type;
+    const timebase_type interval;
+
+public:
+    Periodic(timebase_type interval) :
+        interval(interval) {}
+
+    timebase_type run(timebase_type passed) override
+    {
+        base_type::service().run(passed);
+        return interval;
+    }
+};
+
+/// Variable relative intervals
+/// \tparam TService
+template <class TService>
+class ScheduledRelative :
+        public PeriodicBase,
+        public Base<TService>
 {
     typedef Base<TService> base_type;
 
+public:
+    timebase_type run(timebase_type passed) override
+    {
+        return base_type::service().run(passed);
+    }
 };
 
 }
@@ -94,10 +137,13 @@ namespace managers {
 template <class TTimeBase>
 class Scheduler
 {
+    // absolute time
+    typedef TTimeBase timebase_type;
+
     struct Item
     {
         TTimeBase wakeup;
-        agents::BaseBase* agent;
+        agents::PeriodicBase* agent;
     };
 
     std::vector<Item> agents;
@@ -111,6 +157,18 @@ class Scheduler
                        {
                             return a.wakeup > b.wakeup;
                        });
+    }
+
+public:
+    void add(agents::PeriodicBase* agent)
+    {
+        Item item {10, agent};
+        agents.emplace_back(item);
+    }
+
+    void run()
+    {
+        first().agent->run(1);
     }
 };
 
