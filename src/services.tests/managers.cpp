@@ -3,7 +3,40 @@
 
 using namespace moducom::services;
 
-struct Periodic1
+// for scenarios where std::chrono::duration is a little more than we want
+template <class TInt>
+struct basic_int_duration
+{
+    TInt value;
+
+    static constexpr basic_int_duration zero()
+    {
+        return basic_int_duration {0};
+    }
+
+    static constexpr basic_int_duration min()
+    {
+        return basic_int_duration {-1};
+    }
+
+    bool operator >=(const basic_int_duration& compareTo) const
+    {
+        return value >= compareTo.value;
+    }
+
+    basic_int_duration& operator +=(const basic_int_duration& summand)
+    {
+        value += summand.value;
+        return *this;
+    }
+};
+
+struct fake_clock
+{
+    typedef basic_int_duration<int> duration;
+};
+
+struct Periodic1 : ServiceBase
 {
     typedef int duration_type;
 

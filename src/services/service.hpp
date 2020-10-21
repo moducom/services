@@ -91,7 +91,7 @@ public:
 };
 
 
-/// Fixed-period intervals
+/// Fixed-period intervals, and run indefinitely until system shuts them down
 /// \tparam TService
 template <class TService>
 class Periodic :
@@ -113,7 +113,7 @@ public:
     }
 };
 
-/// Variable relative intervals
+/// Variable relative intervals, and can request self-shutdown
 /// \tparam TService
 template <class TService>
 class ScheduledRelative :
