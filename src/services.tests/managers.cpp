@@ -20,5 +20,7 @@ TEST_CASE("managers")
         agents::Periodic<Periodic1> agent1(1000);
 
         scheduler.add(&agent1);
+
+        scheduler.run(100);
     }
 }

@@ -140,10 +140,17 @@ class Scheduler
     // absolute time
     typedef TTimeBase timebase_type;
 
+    typedef int delta_time_type;
+
     struct Item
     {
-        TTimeBase wakeup;
+        timebase_type wakeup;
         agents::PeriodicBase* agent;
+
+        bool operator < (const Item& compareTo) const
+        {
+            return wakeup < compareTo.wakeup;
+        }
     };
 
     std::vector<Item> agents;
@@ -152,23 +159,42 @@ class Scheduler
 
     void sort()
     {
-        std::sort_heap(agents.begin(), agents.end(),
-                       [&](const Item& a, const Item& b)
-                       {
-                            return a.wakeup > b.wakeup;
-                       });
+        std::sort_heap(agents.begin(), agents.end());
     }
 
 public:
+    Scheduler()
+    {
+        std::make_heap(agents.begin(), agents.end());
+    }
+
     void add(agents::PeriodicBase* agent)
     {
         Item item {10, agent};
         agents.emplace_back(item);
+        std::push_heap(agents.begin(), agents.end());
     }
 
-    void run()
+    void _run(Item& first)
     {
-        first().agent->run(1);
+        // FIX: Not passing in right 'passed' interval just yet
+        delta_time_type wakeup_interval = first.agent->run(1);
+        std::pop_heap(agents.begin(), agents.end());
+        first.wakeup += wakeup_interval;
+        std::push_heap(agents.begin(), agents.end());
+    }
+
+    bool run(timebase_type absolute)
+    {
+        Item& first = this->first();
+
+        if(first.wakeup >= absolute)
+        {
+            _run(first);
+            return true;
+        }
+
+        return false;
     }
 };
 
