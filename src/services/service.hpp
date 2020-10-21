@@ -80,14 +80,14 @@ public:
 };
 
 
+template <class TDuration>
 class PeriodicBase
 {
 public:
     // relative time
-    // DEBT: change names to not conflict with absolute time named the same below
-    typedef int timebase_type;
+    typedef TDuration duration_type;
 
-    virtual timebase_type run(timebase_type passed) = 0;
+    virtual duration_type run(duration_type passed) = 0;
 };
 
 
@@ -95,17 +95,18 @@ public:
 /// \tparam TService
 template <class TService>
 class Periodic :
-        public PeriodicBase,
+        public PeriodicBase<typename TService::duration_type>,
         public Base<TService>
 {
     typedef Base<TService> base_type;
-    const timebase_type interval;
+    typedef typename TService::duration_type duration_type;
+    const duration_type interval;
 
 public:
-    Periodic(timebase_type interval) :
+    Periodic(duration_type interval) :
         interval(interval) {}
 
-    timebase_type run(timebase_type passed) override
+    duration_type run(duration_type passed) override
     {
         base_type::service().run(passed);
         return interval;
@@ -116,13 +117,14 @@ public:
 /// \tparam TService
 template <class TService>
 class ScheduledRelative :
-        public PeriodicBase,
+        public PeriodicBase<typename TService::duration_type>,
         public Base<TService>
 {
     typedef Base<TService> base_type;
+    typedef typename TService::duration_type duration_type;
 
 public:
-    timebase_type run(timebase_type passed) override
+    duration_type run(duration_type passed) override
     {
         return base_type::service().run(passed);
     }
@@ -134,28 +136,35 @@ namespace managers {
 
 /// Handles both fixed-time and variable-time periodic interval agents
 /// Relies on external mechanism to call this at the right time
-template <class TTimeBase>
+/// TODO: Consider making the whole thing follow the system_clock (and friends)
+/// pattern instead, which includes duration and time_point
+template <class TTimeBase, class TDuration>
 class Scheduler
 {
     // absolute time
     typedef TTimeBase timebase_type;
+    typedef TDuration duration_type;
+    typedef agents::PeriodicBase<duration_type> agent_type;
 
-    typedef int delta_time_type;
+    /// lower # = higher priority, service first
+    typedef unsigned short priority_type;
 
     struct Item
     {
         timebase_type wakeup;
-        agents::PeriodicBase* agent;
+        agent_type* agent;
+        priority_type priority;
 
         bool operator < (const Item& compareTo) const
         {
+            // TODO: include priority as part of this comparison
             return wakeup < compareTo.wakeup;
         }
     };
 
     std::vector<Item> agents;
 
-    const Item& first() const { return agents.front(); }
+    Item& first() { return agents.front(); }
 
     void sort()
     {
@@ -165,12 +174,12 @@ class Scheduler
 public:
     Scheduler()
     {
-        std::make_heap(agents.begin(), agents.end());
+        //std::make_heap(agents.begin(), agents.end());
     }
 
-    void add(agents::PeriodicBase* agent)
+    void add(agent_type* agent)
     {
-        Item item {10, agent};
+        Item item {10, agent, 0};
         agents.emplace_back(item);
         std::push_heap(agents.begin(), agents.end());
     }
@@ -178,7 +187,7 @@ public:
     void _run(Item& first)
     {
         // FIX: Not passing in right 'passed' interval just yet
-        delta_time_type wakeup_interval = first.agent->run(1);
+        duration_type wakeup_interval = first.agent->run(1);
         std::pop_heap(agents.begin(), agents.end());
         first.wakeup += wakeup_interval;
         std::push_heap(agents.begin(), agents.end());
