@@ -23,7 +23,7 @@ TEST_CASE("managers")
         {
             agents::Periodic<Periodic1> agent1(1000);
 
-            scheduler.add(&agent1);
+            scheduler.add(&agent1, 0);
 
             scheduler.run(100);
         }
@@ -33,11 +33,20 @@ TEST_CASE("managers")
             agents::Periodic<Periodic1> agent2(1000);
             agents::Periodic<Periodic1> agent3(1000);
 
-            scheduler.add(&agent1);
-            scheduler.add(&agent2);
-            scheduler.add(&agent3);
+            scheduler.add(&agent1,0);
+            scheduler.add(&agent2, 500);
+            scheduler.add(&agent3, 750);
 
+            REQUIRE(scheduler.cfirst().wakeup == 0);
             scheduler.run(100);
+            REQUIRE(scheduler.cfirst().wakeup == 500);
+            scheduler.run(200);
+            REQUIRE(scheduler.cfirst().wakeup == 500);
+            scheduler.run(501);
+            REQUIRE(scheduler.cfirst().wakeup == 750);
+            scheduler.run(700);
+            scheduler.run(750);
+            REQUIRE(scheduler.cfirst().wakeup == 1000);
         }
     }
 }

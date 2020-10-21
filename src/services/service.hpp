@@ -149,6 +149,15 @@ class Scheduler
     /// lower # = higher priority, service first
     typedef unsigned short priority_type;
 
+    enum class priorities : priority_type
+    {
+        highest = 0,
+        high = 100,
+        medium = 200,
+        low = 300,
+        idle = 1000
+    };
+
     struct Item
     {
         timebase_type wakeup;
@@ -157,8 +166,9 @@ class Scheduler
 
         bool operator < (const Item& compareTo) const
         {
-            // TODO: include priority as part of this comparison
-            return wakeup < compareTo.wakeup;
+            // remember, since heaps put largest first, and we want smallest first,
+            // we reverse the compare operation
+            return wakeup >= compareTo.wakeup && priority >= compareTo.priority;
         }
     };
 
@@ -177,19 +187,25 @@ public:
         //std::make_heap(agents.begin(), agents.end());
     }
 
-    void add(agent_type* agent)
+    const Item& cfirst() const { return agents.front(); }
+
+    void add(agent_type* agent, timebase_type initial_wakeup)
     {
-        Item item {10, agent, 0};
+        Item item {initial_wakeup, agent,
+                   (priority_type) priorities::idle};
         agents.emplace_back(item);
         std::push_heap(agents.begin(), agents.end());
     }
 
-    void _run(Item& first)
+    void _run(Item& first, duration_type passed)
     {
         // FIX: Not passing in right 'passed' interval just yet
-        duration_type wakeup_interval = first.agent->run(1);
-        std::pop_heap(agents.begin(), agents.end());
+        duration_type wakeup_interval = first.agent->run(passed);
         first.wakeup += wakeup_interval;
+        // put 'first' at the end
+        std::pop_heap(agents.begin(), agents.end());
+        // do heap magic to place next 'lowest' (largest technically by std::heap
+        // definitions) at first
         std::push_heap(agents.begin(), agents.end());
     }
 
@@ -197,9 +213,12 @@ public:
     {
         Item& first = this->first();
 
-        if(first.wakeup >= absolute)
+        if(absolute >= first.wakeup)
         {
-            _run(first);
+            duration_type delta = absolute - first.wakeup;
+            // FIX: delta is not right here, it has to be delta + past requested
+            // interval for 'passed' to be correct
+            _run(first, delta);
             return true;
         }
 
