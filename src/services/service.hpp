@@ -65,6 +65,18 @@ protected:
     {
         return reinterpret_cast<reference>(raw);
     }
+
+    // DEBT: Eventually needs to be protected/friend access
+public:
+    void construct()
+    {
+        new (&service()) service_type();
+    }
+
+    void destruct()
+    {
+        service().~service_type();
+    }
 };
 
 template <class TService, ServiceBase::ThreadPreference>
@@ -181,6 +193,12 @@ class Scheduler
         std::sort_heap(agents.begin(), agents.end());
     }
 
+    void pop()
+    {
+        std::pop_heap(agents.begin(), agents.end());
+        agents.pop_back();
+    }
+
 public:
     Scheduler()
     {
@@ -188,6 +206,8 @@ public:
     }
 
     const Item& cfirst() const { return agents.front(); }
+
+    size_t count() const noexcept { return agents.size(); }
 
     void add(agent_type* agent, timebase_type initial_wakeup)
     {
@@ -203,7 +223,9 @@ public:
         duration_type wakeup_interval = first.agent->run(passed);
         if(wakeup_interval == duration_type::min())
         {
-
+            // This signals a removal
+            pop();
+            return;
         }
         first.wakeup += wakeup_interval;
         // put 'first' at the end
@@ -213,6 +235,9 @@ public:
         std::push_heap(agents.begin(), agents.end());
     }
 
+    ///
+    /// \param absolute
+    /// \return true when item serviced
     bool run(timebase_type absolute)
     {
         Item& first = this->first();

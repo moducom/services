@@ -86,6 +86,22 @@ struct Scheduled1 : ServiceBase
     }
 };
 
+
+struct ScheduledRemoval : ServiceBase
+{
+    typedef fake_clock::duration duration_type;
+    int counter = 3;
+
+    duration_type run(duration_type interval)
+    {
+        if(--counter)
+            return duration_type(1000);
+        else
+            return duration_type::min();
+    }
+};
+
+
 TEST_CASE("managers")
 {
     SECTION("scheduler")
@@ -142,11 +158,31 @@ TEST_CASE("managers")
         }
         SECTION("scheduled")
         {
-            agents::ScheduledRelative<Scheduled1> agent1;
-
             managers::Scheduler<fake_clock::time_point, fake_clock::duration> scheduler;
 
-            scheduler.add(&agent1, 500);
+            SECTION("basic")
+            {
+                agents::ScheduledRelative<Scheduled1> agent1;
+
+                scheduler.add(&agent1, 500);
+            }
+            SECTION("remover")
+            {
+                agents::ScheduledRelative<ScheduledRemoval> agent1;
+
+                agent1.construct();
+
+                scheduler.add(&agent1, 500);
+
+                scheduler.run(1000);
+                scheduler.run(2000);
+                REQUIRE(scheduler.count() == 1);
+                scheduler.run(3000);
+
+                REQUIRE(scheduler.count() == 0);
+
+                agent1.destruct();
+            }
         }
     }
 }
