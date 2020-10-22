@@ -1,5 +1,8 @@
 #include "catch2/catch.hpp"
+
 #include <service.hpp>
+
+#include <chrono>
 
 using namespace moducom::services;
 
@@ -27,6 +30,11 @@ struct basic_int_duration
     bool operator ==(TInt compareTo) const
     {
         return value == compareTo;
+    }
+
+    bool operator ==(const basic_int_duration& compareTo) const
+    {
+        return value == compareTo.value;
     }
 
     basic_int_duration& operator +=(const basic_int_duration& summand)
@@ -67,10 +75,22 @@ struct Periodic1 : ServiceBase
     }
 };
 
+
+struct Scheduled1 : ServiceBase
+{
+    typedef fake_clock::duration duration_type;
+
+    duration_type run(duration_type interval)
+    {
+        return duration_type(1000);
+    }
+};
+
 TEST_CASE("managers")
 {
     SECTION("scheduler")
     {
+        /*
         SECTION("basic")
         {
             managers::Scheduler<int, int> scheduler;
@@ -80,7 +100,7 @@ TEST_CASE("managers")
             scheduler.add(&agent1, 0);
 
             scheduler.run(100);
-        }
+        } */
         SECTION("multiple")
         {
             managers::Scheduler<fake_clock::time_point, fake_clock::duration> scheduler;
@@ -103,6 +123,30 @@ TEST_CASE("managers")
             scheduler.run(700);
             scheduler.run(750);
             REQUIRE(scheduler.cfirst().wakeup == 1000);
+        }
+        SECTION("real chrono")
+        {
+            using namespace std::chrono_literals;
+
+            typedef std::chrono::system_clock clock_type;
+            managers::Scheduler<clock_type::time_point, clock_type::duration> scheduler;
+
+            agents::Periodic<Periodic1<clock_type::duration> > agent1(1000ms);
+
+            scheduler.add(&agent1, clock_type::time_point(200ms));
+
+            scheduler.run(clock_type::time_point(100ms));
+            REQUIRE(scheduler.cfirst().wakeup == clock_type::time_point(200ms));
+            scheduler.run(clock_type::time_point(300ms));
+            REQUIRE(scheduler.cfirst().wakeup == clock_type::time_point(1200ms));
+        }
+        SECTION("scheduled")
+        {
+            agents::ScheduledRelative<Scheduled1> agent1;
+
+            managers::Scheduler<fake_clock::time_point, fake_clock::duration> scheduler;
+
+            scheduler.add(&agent1, 500);
         }
     }
 }

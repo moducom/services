@@ -201,6 +201,10 @@ public:
     {
         // FIX: Not passing in right 'passed' interval just yet
         duration_type wakeup_interval = first.agent->run(passed);
+        if(wakeup_interval == duration_type::min())
+        {
+
+        }
         first.wakeup += wakeup_interval;
         // put 'first' at the end
         std::pop_heap(agents.begin(), agents.end());
