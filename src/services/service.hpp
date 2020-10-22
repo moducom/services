@@ -25,6 +25,20 @@ public:
     {}
 };
 
+enum class Status
+{
+    Unstarted,
+    Starting,
+    Started,
+    Running,
+    Pausing,
+    Paused,
+    Stopping,
+    Stopped,
+
+    Error
+};
+
 
 class ServiceBase
 {
@@ -49,7 +63,12 @@ namespace agents {
 // DEBT: Fix bad naming
 class BaseBase
 {
+protected:
+    Status status_ = Status::Unstarted;
 
+    void status(Status s) { status_ = s; }
+public:
+    Status status() const { return status_; }
 };
 
 template <class TService>
@@ -68,9 +87,10 @@ protected:
 
     // DEBT: Eventually needs to be protected/friend access
 public:
-    void construct()
+    template <class ...TArgs>
+    void construct(TArgs ... args)
     {
-        new (&service()) service_type();
+        new (&service()) service_type(std::forward(args)...);
     }
 
     void destruct()
