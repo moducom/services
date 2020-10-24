@@ -4,6 +4,7 @@
 #include "stop_token.h"
 
 #include <algorithm>
+#include <tuple>
 #include <utility>
 
 namespace moducom { namespace services {
@@ -80,17 +81,18 @@ protected:
     typedef TService service_type;
     typedef service_type& reference;
 
+    // DEBT: Eventually needs to be protected/friend access.  Making them public
+    // for ease of testing/bringup
+public:
     reference service()
     {
         return reinterpret_cast<reference>(raw);
     }
 
-    // DEBT: Eventually needs to be protected/friend access
-public:
     template <class ...TArgs>
     void construct(TArgs&&... args)
     {
-        new (&service()) service_type(std::forward(args)...);
+        new (&service()) service_type(std::forward<TArgs>(args)...);
     }
 
     void destruct()
@@ -163,17 +165,40 @@ public:
 };
 
 
+// NOTE: Not a fan of holding on to initiatization arguments forever.  So this is
+// a tracer code style approach for now
 template <class TService, class ...TArgs>
 class StandaloneStdThread : public Base<TService>
 {
     typedef Base<TService> base_type;
 
+    // holding on to ctor args here
+    // guidance from https://stackoverflow.com/questions/15537817/c-how-to-store-a-parameter-pack-as-a-variable
+    std::tuple<TArgs...> ctor_args;
+
 public:
-    StandaloneStdThread(TArgs&&... args)
+    StandaloneStdThread(TArgs&&... args) :
+        ctor_args(std::forward<TArgs>(args)...)
     {
 
     }
+
+    void construct()
+    {
+        std::apply([&](const TArgs&... args)
+        {
+            base_type::construct(args...);
+        }, ctor_args);
+    }
 };
+
+template <class TService, class ...TArgs>
+auto make_standalone(TArgs&&... args)
+{
+    StandaloneStdThread<TService, TArgs...> agent(
+            std::forward<TArgs>(args)...);
+    return agent;
+}
 
 }
 

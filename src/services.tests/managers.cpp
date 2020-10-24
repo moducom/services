@@ -86,6 +86,13 @@ struct Scheduled1 : ServiceBase
     }
 };
 
+struct Continuous1 : ServiceBase
+{
+    const int value;
+
+    Continuous1(int value) : value(value) {}
+};
+
 
 struct ScheduledRemoval : ServiceBase
 {
@@ -184,5 +191,17 @@ TEST_CASE("managers")
                 agent1.destruct();
             }
         }
+    }
+    SECTION("standalone")
+    {
+        auto s = agents::make_standalone<Continuous1>(1);
+
+        memset(&s.service(), 0, sizeof(Continuous1));
+
+        REQUIRE(s.service().value == 0);
+
+        s.construct();
+
+        REQUIRE(s.service().value == 1);
     }
 }
