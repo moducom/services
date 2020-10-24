@@ -91,6 +91,11 @@ struct Continuous1 : ServiceBase
     const int value;
 
     Continuous1(int value) : value(value) {}
+
+    void run()
+    {
+
+    }
 };
 
 
@@ -203,5 +208,12 @@ TEST_CASE("managers")
         s.construct();
 
         REQUIRE(s.service().value == 1);
+
+        SECTION("threading")
+        {
+            stop_source source;
+
+            //s.run(source.token());
+        }
     }
 }

@@ -4,6 +4,7 @@
 #include "stop_token.h"
 
 #include <algorithm>
+#include <thread>
 #include <tuple>
 #include <utility>
 
@@ -171,10 +172,28 @@ template <class TService, class ...TArgs>
 class StandaloneStdThread : public Base<TService>
 {
     typedef Base<TService> base_type;
+    typedef StandaloneStdThread this_type;
 
     // holding on to ctor args here
     // guidance from https://stackoverflow.com/questions/15537817/c-how-to-store-a-parameter-pack-as-a-variable
     std::tuple<TArgs...> ctor_args;
+
+protected:
+    void worker(const stop_token& stopToken)
+    {
+        construct();
+        base_type::status(Status::Started);
+        base_type::status(Status::Running);
+
+        while(!stopToken.stop_requested())
+        {
+            base_type::service().run();
+        }
+
+        base_type::status(Status::Stopping);
+        base_type::destruct();
+        base_type::status(Status::Stopped);
+    }
 
 public:
     StandaloneStdThread(TArgs&&... args) :
@@ -189,6 +208,13 @@ public:
         {
             base_type::construct(args...);
         }, ctor_args);
+    }
+
+    std::thread run(const stop_token& token)
+    {
+        base_type::status(Status::Starting);
+        std::thread thread(&this_type::worker, this, token);
+        return thread;
     }
 };
 
