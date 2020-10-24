@@ -94,7 +94,10 @@ struct Continuous1 : ServiceBase
 
     void run()
     {
+        using namespace std::chrono_literals;
 
+        // DEBT: Need our own stop_source interruptable sleep
+        std::this_thread::sleep_for(100ms);
     }
 };
 
@@ -213,7 +216,24 @@ TEST_CASE("managers")
         {
             stop_source source;
 
-            //s.run(source.token());
+            // FIX: after s.run is called, source.request_stop() is not listened to
+            // perhaps it's a cache/volatility thing
+            source.request_stop();
+
+            std::thread worker = s.run(source.token());
+
+            Status status = s.status();
+
+            REQUIRE(
+                (status == Status::Started ||
+                status == Status::Starting ||
+                status == Status::Running));
+
+            source.request_stop();
+
+            worker.join();
+
+            REQUIRE(s.status() == Status::Stopped);
         }
     }
 }

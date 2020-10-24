@@ -7,7 +7,7 @@ namespace moducom { namespace services {
 
 class stop_token
 {
-    bool stop_requested_;
+    bool stop_requested_ = false;
 
     friend class stop_source;
 

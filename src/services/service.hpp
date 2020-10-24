@@ -192,6 +192,8 @@ protected:
 
         base_type::status(Status::Stopping);
         base_type::destruct();
+
+        // DEBT: Would be better if this was set when thread itself terminated
         base_type::status(Status::Stopped);
     }
 
