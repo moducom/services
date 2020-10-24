@@ -88,7 +88,7 @@ protected:
     // DEBT: Eventually needs to be protected/friend access
 public:
     template <class ...TArgs>
-    void construct(TArgs ... args)
+    void construct(TArgs&&... args)
     {
         new (&service()) service_type(std::forward(args)...);
     }
@@ -159,6 +159,19 @@ public:
     duration_type run(duration_type passed) override
     {
         return base_type::service().run(passed);
+    }
+};
+
+
+template <class TService, class ...TArgs>
+class StandaloneStdThread : public Base<TService>
+{
+    typedef Base<TService> base_type;
+
+public:
+    StandaloneStdThread(TArgs&&... args)
+    {
+
     }
 };
 
