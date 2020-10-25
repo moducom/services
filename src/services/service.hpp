@@ -100,7 +100,7 @@ public:
 // DEBT: Fix bad naming
 class BaseBase
 {
-    std::vector<BaseBase> dependsOn;
+    std::vector<entt::entity> dependsOn;
     EnttHelper entity;
 
 protected:
@@ -122,6 +122,17 @@ public:
     const Description& description() const
     {
         return entity.get<Description>();
+    }
+
+    void dependencyStatusUpdated(entt::registry&, entt::entity id)
+    {
+
+    }
+
+    void depends(entt::entity id)
+    {
+        dependsOn.push_back(id);
+        entity.registry.on_update<Status>().connect<&BaseBase::dependencyStatusUpdated>(this);
     }
 };
 
