@@ -41,6 +41,7 @@ public:
 enum class Status
 {
     Unstarted,
+    WaitingOnDependency,
     Starting,
     Started,
     Running,
@@ -116,6 +117,25 @@ protected:
     }
 
 public:
+    int dependenciesRunningCount() const
+    {
+        int count = 0;
+
+        for(entt::entity id : dependsOn)
+        {
+            auto status = entity.registry.get<Status>(id);
+
+            if(status == Status::Running) count++;
+        }
+
+        return count;
+    }
+
+    bool dependenciesAllRunning() const
+    {
+        return dependenciesRunningCount() == dependsOn.size();
+    }
+
 
     Status status() const { return status_; }
 
@@ -126,13 +146,26 @@ public:
 
     void dependencyStatusUpdated(entt::registry&, entt::entity id)
     {
-
+        // TODO: Optimize and consider the particular entity rather than re-evaluating
+        // them all each time for every entity status update
+        bool allRunning = dependenciesAllRunning();
+        if(allRunning)
+        {
+            if(status() == Status::WaitingOnDependency)
+                status(Status::Starting);
+        }
     }
 
-    void depends(entt::entity id)
+    void addDependency(entt::entity id)
     {
         dependsOn.push_back(id);
         entity.registry.on_update<Status>().connect<&BaseBase::dependencyStatusUpdated>(this);
+    }
+
+    void _start()
+    {
+        if(!dependenciesAllRunning())
+            status(Status::WaitingOnDependency);
     }
 };
 

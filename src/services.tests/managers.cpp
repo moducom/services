@@ -121,6 +121,7 @@ TEST_CASE("managers")
 {
     entt::registry registry;
     agents::EnttHelper enttHelper(registry, registry.create());
+    agents::EnttHelper entity2(registry, registry.create());
 
     SECTION("semver")
     {
