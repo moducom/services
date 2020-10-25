@@ -5,6 +5,9 @@ using namespace moducom::services;
 
 TEST_CASE("misc")
 {
+    entt::registry registry;
+    agents::EnttHelper enttHelper(registry, registry.create());
+
     SECTION("A")
     {
 
@@ -12,5 +15,11 @@ TEST_CASE("misc")
     SECTION("stop_source")
     {
         stop_source s;
+    }
+    SECTION("BaseBase")
+    {
+        agents::BaseBase base(enttHelper);
+
+        entt::sink sink{base.statusSignal()};
     }
 }

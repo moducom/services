@@ -106,7 +106,7 @@ class BaseBase
     std::vector<entt::entity> dependsOn;
     EnttHelper entity;
 
-protected:
+public:
     typedef entt::sigh<void(int, char)> signal_type;
     signal_type signal;
     entt::sigh<void(Status)> statusSignal_;
