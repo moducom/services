@@ -119,6 +119,9 @@ struct ScheduledRemoval : ServiceBase
 
 TEST_CASE("managers")
 {
+    entt::registry registry;
+    agents::EnttHelper enttHelper(registry, registry.create());
+
     SECTION("scheduler")
     {
         /*
@@ -136,9 +139,9 @@ TEST_CASE("managers")
         {
             managers::Scheduler<fake_clock::time_point, fake_clock::duration> scheduler;
 
-            agents::Periodic<Periodic1<fake_clock::duration> > agent1(1000);
-            agents::Periodic<Periodic1<fake_clock::duration> > agent2(1000);
-            agents::Periodic<Periodic1<fake_clock::duration> > agent3(1000);
+            agents::Periodic<Periodic1<fake_clock::duration> > agent1(enttHelper, 1000);
+            agents::Periodic<Periodic1<fake_clock::duration> > agent2(enttHelper, 1000);
+            agents::Periodic<Periodic1<fake_clock::duration> > agent3(enttHelper, 1000);
 
             scheduler.add(&agent1,0);
             scheduler.add(&agent2, 500);
@@ -162,7 +165,7 @@ TEST_CASE("managers")
             typedef std::chrono::system_clock clock_type;
             managers::Scheduler<clock_type::time_point, clock_type::duration> scheduler;
 
-            agents::Periodic<Periodic1<clock_type::duration> > agent1(1000ms);
+            agents::Periodic<Periodic1<clock_type::duration> > agent1(enttHelper, 1000ms);
 
             scheduler.add(&agent1, clock_type::time_point(200ms));
 
@@ -177,13 +180,13 @@ TEST_CASE("managers")
 
             SECTION("basic")
             {
-                agents::ScheduledRelative<Scheduled1> agent1;
+                agents::ScheduledRelative<Scheduled1> agent1(enttHelper);
 
                 scheduler.add(&agent1, 500);
             }
             SECTION("remover")
             {
-                agents::ScheduledRelative<ScheduledRemoval> agent1;
+                agents::ScheduledRelative<ScheduledRemoval> agent1(enttHelper);
 
                 agent1.construct();
 
@@ -202,7 +205,7 @@ TEST_CASE("managers")
     }
     SECTION("standalone")
     {
-        auto s = agents::make_standalone<Continuous1>(1);
+        auto s = agents::make_standalone<Continuous1>(enttHelper, 1);
 
         memset(&s.service(), 0, sizeof(Continuous1));
 

@@ -66,9 +66,9 @@ namespace agents {
 
 class EnttHelper
 {
-protected:
+public:
     entt::registry& registry;
-    entt::entity entity;
+    const entt::entity entity;
 
 public:
     EnttHelper(entt::registry& registry, entt::entity entity) :
@@ -80,11 +80,20 @@ public:
 class BaseBase
 {
     std::vector<BaseBase> dependsOn;
+    EnttHelper entity;
 
 protected:
+    BaseBase(EnttHelper entity) :
+        entity(entity) {}
+
     Status status_ = Status::Unstarted;
 
-    void status(Status s) { status_ = s; }
+    void status(Status s)
+    {
+        status_ = s;
+        entity.registry.emplace_or_replace<Status>(entity.entity, s);
+    }
+
 public:
 
     Status status() const { return status_; }
@@ -102,6 +111,8 @@ protected:
     // DEBT: Eventually needs to be protected/friend access.  Making them public
     // for ease of testing/bringup
 public:
+    Base(EnttHelper entity) : BaseBase(entity) {}
+
     reference service()
     {
         return reinterpret_cast<reference>(raw);
@@ -155,7 +166,8 @@ class Periodic :
     const duration_type interval;
 
 public:
-    Periodic(duration_type interval) :
+    Periodic(EnttHelper enttHelper, duration_type interval) :
+        base_type(enttHelper),
         interval(interval) {}
 
     duration_type run(duration_type passed) override
@@ -176,6 +188,8 @@ class ScheduledRelative :
     typedef typename TService::duration_type duration_type;
 
 public:
+    ScheduledRelative(EnttHelper entity) : base_type(entity) {}
+
     duration_type run(duration_type passed) override
     {
         return base_type::service().run(passed);
@@ -215,7 +229,8 @@ protected:
     }
 
 public:
-    StandaloneStdThread(TArgs&&... args) :
+    StandaloneStdThread(EnttHelper entity, TArgs&&... args) :
+        base_type(entity),
         ctor_args(std::forward<TArgs>(args)...)
     {
 
@@ -238,9 +253,10 @@ public:
 };
 
 template <class TService, class ...TArgs>
-auto make_standalone(TArgs&&... args)
+auto make_standalone(EnttHelper enttHelper, TArgs&&... args)
 {
     StandaloneStdThread<TService, TArgs...> agent(
+            enttHelper,
             std::forward<TArgs>(args)...);
     return agent;
 }
