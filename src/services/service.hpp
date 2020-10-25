@@ -24,9 +24,14 @@ class Description
     const SemVer version_;
 
 public:
-    Description(char* name, SemVer version) :
+    Description(const char* name, SemVer version) :
         name_(name), version_(version)
     {}
+
+    Description(Description&& moveFrom) = default;
+    Description(const Description& copyFrom) = default;
+
+    Description& operator=(const Description& copyFrom) = default;
 };
 
 enum class Status
@@ -97,6 +102,12 @@ protected:
 public:
 
     Status status() const { return status_; }
+
+    /*
+    const Description& description() const
+    {
+        return entity.registry.get<Description>(entity.entity);
+    } */
 };
 
 template <class TService>
