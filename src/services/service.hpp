@@ -3,6 +3,8 @@
 #include "semver.h"
 #include "stop_token.h"
 
+#include <entt/signal/delegate.hpp>
+#include <entt/signal/sigh.hpp>
 #include <entt/entt.hpp>
 
 #include <algorithm>
@@ -105,8 +107,13 @@ class BaseBase
     EnttHelper entity;
 
 protected:
+    typedef entt::sigh<void(int, char)> signal_type;
+    signal_type signal;
+    entt::sigh<void(Status)> statusSignal_;
+
     BaseBase(EnttHelper entity) :
-        entity(entity) {}
+        entity(entity)
+    {}
 
     Status status_ = Status::Unstarted;
 
@@ -114,9 +121,15 @@ protected:
     {
         status_ = s;
         entity.registry.emplace_or_replace<Status>(entity.entity, s);
+        statusSignal_.publish(s);
     }
 
 public:
+    entt::sigh<void(Status)>& statusSignal()
+    {
+        return statusSignal_;
+    }
+
     int dependenciesRunningCount() const
     {
         int count = 0;
