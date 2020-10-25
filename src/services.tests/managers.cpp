@@ -214,11 +214,13 @@ TEST_CASE("managers")
 
         SECTION("threading")
         {
+            using namespace std::chrono_literals;
+
             stop_source source;
 
             // FIX: after s.run is called, source.request_stop() is not listened to
             // perhaps it's a cache/volatility thing
-            source.request_stop();
+            //source.request_stop();
 
             std::thread worker = s.run(source.token());
 
@@ -228,6 +230,12 @@ TEST_CASE("managers")
                 (status == Status::Started ||
                 status == Status::Starting ||
                 status == Status::Running));
+
+            // DEBT: Spinwaits are bad
+            while(s.status() != Status::Running)
+            {
+                std::this_thread::sleep_for(50ms);
+            }
 
             source.request_stop();
 

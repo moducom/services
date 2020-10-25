@@ -215,7 +215,7 @@ public:
     std::thread run(const stop_token& token)
     {
         base_type::status(Status::Starting);
-        std::thread thread(&this_type::worker, this, token);
+        std::thread thread(&this_type::worker, this, std::ref(token));
         return thread;
     }
 };
