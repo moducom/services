@@ -3,6 +3,8 @@
 #include "semver.h"
 #include "stop_token.h"
 
+#include <entt/entt.hpp>
+
 #include <algorithm>
 #include <thread>
 #include <tuple>
@@ -62,14 +64,29 @@ public:
 
 namespace agents {
 
+class EnttHelper
+{
+protected:
+    entt::registry& registry;
+    entt::entity entity;
+
+public:
+    EnttHelper(entt::registry& registry, entt::entity entity) :
+        registry(registry), entity(entity)
+    {}
+};
+
 // DEBT: Fix bad naming
 class BaseBase
 {
+    std::vector<BaseBase> dependsOn;
+
 protected:
     Status status_ = Status::Unstarted;
 
     void status(Status s) { status_ = s; }
 public:
+
     Status status() const { return status_; }
 };
 
