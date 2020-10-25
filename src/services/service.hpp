@@ -31,7 +31,11 @@ public:
     Description(Description&& moveFrom) = default;
     Description(const Description& copyFrom) = default;
 
-    Description& operator=(const Description& copyFrom) = default;
+    Description& operator=(const Description& copyFrom)
+    {
+        new (this) Description(copyFrom);
+        return *this;
+    };
 };
 
 enum class Status
@@ -79,6 +83,18 @@ public:
     EnttHelper(entt::registry& registry, entt::entity entity) :
         registry(registry), entity(entity)
     {}
+
+    template <class TComponent>
+    TComponent& get()
+    {
+        return registry.get<TComponent>(entity);
+    }
+
+    template <class TComponent>
+    const TComponent& get() const
+    {
+        return registry.get<TComponent>(entity);
+    }
 };
 
 // DEBT: Fix bad naming
@@ -103,11 +119,10 @@ public:
 
     Status status() const { return status_; }
 
-    /*
     const Description& description() const
     {
-        return entity.registry.get<Description>(entity.entity);
-    } */
+        return entity.get<Description>();
+    }
 };
 
 template <class TService>

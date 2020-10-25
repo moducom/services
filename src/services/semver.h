@@ -9,8 +9,6 @@ struct SemVer
     const unsigned short patch;
 
     const char* prerelease;
-
-    SemVer& operator=(const SemVer& copyFrom) = default;
 };
 
 }

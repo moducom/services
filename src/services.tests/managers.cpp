@@ -122,6 +122,10 @@ TEST_CASE("managers")
     entt::registry registry;
     agents::EnttHelper enttHelper(registry, registry.create());
 
+    SECTION("semver")
+    {
+        //enttHelper.registry.get<moducom::SemVer>(enttHelper.entity);
+    }
     SECTION("scheduler")
     {
         /*
