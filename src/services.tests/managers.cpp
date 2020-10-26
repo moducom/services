@@ -8,6 +8,8 @@
 
 using namespace moducom::services;
 
+typedef moducom::services::agents::BaseBase agent_type;
+
 // for scenarios where std::chrono::duration is a little more than we want
 template <class TInt>
 struct basic_int_duration

@@ -1,3 +1,10 @@
+/**
+ * @file    agents.hpp
+ * @brief   Where stock implementation-specific agents live
+ * @details Agents decouple platform/implementation specifics from a service type, as well as hold on
+ *          to state data (such as status) for convenience.
+ */
+
 #pragma once
 
 #include <entt/signal/delegate.hpp>
@@ -62,6 +69,19 @@ public:
         statusSignal_.publish(this, s);
     }
 
+
+    // DEBT: In my experience, 'message' portion really wants to be something like a std::string
+    // because sometimes custom-built messages are presented
+    void progress(short percentage, std::string message, const char* subsystem = nullptr)
+    {
+        Progress p{percentage, subsystem, message};
+    }
+
+    void progress(short percentage)
+    {
+        Progress p{percentage, nullptr};
+    }
+
 public:
     int dependenciesRunningCount() const
     {
@@ -118,6 +138,7 @@ public:
 
 class Depender
 {
+protected:
     std::vector<BaseBase*> dependsOn;
     entt::sigh<void (bool)> signalSatisfied;
     bool satisfied_ = false;
@@ -153,6 +174,14 @@ public:
     }
 
     Depender() : sinkSatisfied{signalSatisfied} {}
+};
+
+
+class Aggregator :
+        public BaseBase,
+        public Depender
+{
+
 };
 
 

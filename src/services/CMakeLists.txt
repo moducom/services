@@ -11,7 +11,7 @@ add_library(${PROJECT_NAME}
         agents.hpp
         library.cpp library.h
         managers.hpp
-        service.hpp
+        service.hpp services.h
         semver.h
         status.h
         stop_token.h)
