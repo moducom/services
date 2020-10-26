@@ -178,6 +178,31 @@ public:
     }
 };
 
+
+class Depender
+{
+    std::vector<BaseBase*> dependsOn;
+    entt::sigh<void (bool)> signalSatisfied;
+    bool satisfied_ = false;
+
+private:
+    void dependentStatusChanged(Status status)
+    {
+    }
+
+public:
+    entt::sink<void (bool)> sinkSatisfied;
+
+    void add(BaseBase& agent)
+    {
+        agent.statusSink.connect<&Depender::dependentStatusChanged>(*this);
+        dependsOn.push_back(&agent);
+    }
+
+    Depender() : sinkSatisfied{signalSatisfied} {}
+};
+
+
 template <class TService>
 class Base : public BaseBase
 {
