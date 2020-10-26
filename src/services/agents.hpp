@@ -31,6 +31,8 @@ public:
             registry(registry), entity(entity)
     {}
 
+    EnttHelper(const EnttHelper& copyFrom) = default;
+
     template <class TComponent>
     TComponent& get()
     {
@@ -50,10 +52,12 @@ class BaseBase
     // TODO: probably phase out this dependsOn, managing that externally now
     std::vector<entt::entity> dependsOn;
 
-    EnttHelper entity;
     entt::sigh<void(BaseBase*, Status)> statusSignal_;
     entt::sigh<void(BaseBase*, Progress)> progressSignal_;
     entt::sigh<void(BaseBase*, Alert)> alertSignal_;
+
+protected:
+    EnttHelper entity;
 
 public:
     entt::sink<void(BaseBase*, Status)> statusSink;
@@ -221,6 +225,10 @@ class Aggregator :
     }
 
 public:
+    Aggregator(EnttHelper eh) :
+        BaseBase(eh)
+    {}
+
     void start()
     {
         status(Status::Starting);

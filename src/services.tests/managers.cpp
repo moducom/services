@@ -131,6 +131,10 @@ TEST_CASE("managers")
     {
         //enttHelper.registry.get<moducom::SemVer>(enttHelper.entity);
     }
+    SECTION("aggregator")
+    {
+        agents::Aggregator a(enttHelper);
+    }
     SECTION("scheduler")
     {
         /*
@@ -254,6 +258,10 @@ TEST_CASE("managers")
             worker.join();
 
             REQUIRE(s.status() == Status::Stopped);
+        }
+        SECTION("manager")
+        {
+            managers::StandaloneStdThreadManager manager(enttHelper);
         }
     }
 }

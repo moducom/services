@@ -46,7 +46,6 @@ public:
 class StandaloneStdThreadManager : public agents::Aggregator
 {
     stop_source stopSource;
-    agents::EnttHelper entity;
     typedef agents::Aggregator base_type;
 
     std::vector<agent_type*> _agents() const
@@ -100,6 +99,10 @@ public:
         }
         while(stillRunning > 0);
     }
+
+    StandaloneStdThreadManager(agents::EnttHelper eh) :
+        agents::Aggregator(eh)
+    {}
 
     ~StandaloneStdThreadManager()
     {
