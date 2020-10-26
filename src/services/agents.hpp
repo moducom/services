@@ -51,16 +51,19 @@ class BaseBase
     EnttHelper entity;
     entt::sigh<void(BaseBase*, Status)> statusSignal_;
     entt::sigh<void(BaseBase*, Progress)> progressSignal_;
+    entt::sigh<void(BaseBase*, Alert)> alertSignal_;
 
 public:
     entt::sink<void(BaseBase*, Status)> statusSink;
     entt::sink<void(BaseBase*, Progress)> progressSink;
+    entt::sink<void(BaseBase*, Alert)> alertSink;
 
 
     BaseBase(EnttHelper entity) :
             entity(entity),
             statusSink{statusSignal_},
-            progressSink{progressSignal_}
+            progressSink{progressSignal_},
+            alertSink{alertSignal_}
     {}
 
     Status status_ = Status::Unstarted;
@@ -87,6 +90,11 @@ public:
         Progress p{percentage, nullptr};
 
         progressSignal_.publish(this, p);
+    }
+
+    void error(std::string message, const char* subsystem = nullptr)
+    {
+        alertSignal_.publish(this, Alert{message, subsystem, Alert::Error});
     }
 
 public:
@@ -143,10 +151,13 @@ public:
 };
 
 
+// DEBT: Split this out into .h/.cpp flavor to reduce clutter in .hpp
 class Depender
 {
 protected:
-    std::vector<BaseBase*> dependsOn;
+    typedef BaseBase agent_type;
+
+    std::vector<agent_type*> dependsOn;
     entt::sigh<void (bool)> signalSatisfied;
     bool satisfied_ = false;
 
@@ -160,7 +171,7 @@ private:
     }
 
 
-    void dependentStatusChanged(BaseBase* agent, Status status)
+    void dependentStatusChanged(agent_type* agent, Status status)
     {
         bool anyNotRunning =
                 std::any_of(dependsOn.begin(), dependsOn.end(), [&](BaseBase* item)
@@ -174,13 +185,22 @@ private:
 public:
     entt::sink<void (bool)> sinkSatisfied;
 
-    void add(BaseBase& agent)
+    void add(agent_type& agent)
     {
         agent.statusSink.connect<&Depender::dependentStatusChanged>(*this);
         dependsOn.push_back(&agent);
+        // Brute force a status change to update our own aggregated status
+        dependentStatusChanged(&agent, agent.status());
     }
 
     Depender() : sinkSatisfied{signalSatisfied} {}
+    ~Depender()
+    {
+        for(agent_type* agent : dependsOn)
+        {
+            agent->statusSink.disconnect<&Depender::dependentStatusChanged>(*this);
+        }
+    }
 };
 
 
@@ -188,7 +208,26 @@ class Aggregator :
         public BaseBase,
         public Depender
 {
+    void dependentStatus()
+    {
 
+    }
+
+    void dependentProgress()
+    {
+
+    }
+
+public:
+    void start()
+    {
+        status(Status::Starting);
+    }
+
+    void stop()
+    {
+        status(Status::Stopping);
+    }
 };
 
 

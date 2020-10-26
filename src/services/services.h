@@ -33,4 +33,18 @@ struct Progress
     const std::string message;
 };
 
+struct Alert
+{
+    enum Level
+    {
+        Critical,
+        Error,
+        Warning,
+    };
+
+    const std::string message;
+    const char* subsystem;
+    const Level level;
+};
+
 }}

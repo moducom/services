@@ -9,6 +9,7 @@ enum class Status
     Starting,
     Started,
     Running,
+    Degraded,   ///< Partially running state
     Pausing,
     Paused,
     Stopping,
