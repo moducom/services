@@ -7,7 +7,7 @@ struct Listener1
 {
     Status status_ = Status::Error;
 
-    void onStatusChanged(Status status)
+    void onStatusChanged(agents::BaseBase* agent, Status status)
     {
         status_ = status;
     }

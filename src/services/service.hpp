@@ -107,8 +107,8 @@ class BaseBase
     EnttHelper entity;
 
 public:
-    entt::sigh<void(Status)> statusSignal_;
-    entt::sink<void(Status)> statusSink;
+    entt::sigh<void(BaseBase*, Status)> statusSignal_;
+    entt::sink<void(BaseBase*, Status)> statusSink;
 
 
     BaseBase(EnttHelper entity) :
@@ -122,7 +122,7 @@ public:
     {
         status_ = s;
         entity.registry.emplace_or_replace<Status>(entity.entity, s);
-        statusSignal_.publish(s);
+        statusSignal_.publish(this, s);
     }
 
 public:
@@ -195,7 +195,7 @@ private:
     }
 
 
-    void dependentStatusChanged(Status status)
+    void dependentStatusChanged(BaseBase* agent, Status status)
     {
         bool anyNotRunning =
                 std::any_of(dependsOn.begin(), dependsOn.end(), [&](BaseBase* item)
