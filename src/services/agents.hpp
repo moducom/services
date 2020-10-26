@@ -339,22 +339,18 @@ public:
 };
 
 
-// NOTE: Not a fan of holding on to initiatization arguments forever.  So this is
-// a tracer code style approach for now
-template <class TService, class ...TArgs>
-class StandaloneStdThread : public Base<TService>
+template <class TService>
+class Worker : public Base<TService>
 {
     typedef Base<TService> base_type;
-    typedef StandaloneStdThread this_type;
-
-    // holding on to ctor args here
-    // guidance from https://stackoverflow.com/questions/15537817/c-how-to-store-a-parameter-pack-as-a-variable
-    std::tuple<TArgs...> ctor_args;
 
 protected:
-    void worker(const stop_token& stopToken)
+    Worker(EnttHelper entity) : base_type(entity) {}
+
+protected:
+
+    void worker_after_construction(const stop_token& stopToken)
     {
-        construct();
         base_type::status(Status::Started);
         base_type::status(Status::Running);
 
@@ -369,6 +365,20 @@ protected:
         // DEBT: Would be better if this was set when thread itself terminated
         base_type::status(Status::Stopped);
     }
+};
+
+
+// NOTE: Not a fan of holding on to initiatization arguments forever.  So this is
+// a tracer code style approach for now
+template <class TService, class ...TArgs>
+class StandaloneStdThread : public Worker<TService>
+{
+    typedef Worker<TService> base_type;
+    typedef StandaloneStdThread this_type;
+
+    // holding on to ctor args here
+    // guidance from https://stackoverflow.com/questions/15537817/c-how-to-store-a-parameter-pack-as-a-variable
+    std::tuple<TArgs...> ctor_args;
 
 public:
     StandaloneStdThread(EnttHelper entity, TArgs&&... args) :
@@ -384,6 +394,15 @@ public:
                    {
                        base_type::construct(args...);
                    }, ctor_args);
+    }
+
+    void worker(const stop_token& token)
+    {
+        // DEBT: Would prefer the pass-function-as-template-parameter flavor and
+        // completely consolidate construct() call down into Worker class.  Proved to
+        // be kinda tricky, so not doing so just yet
+        construct();
+        base_type::worker_after_construction(token);
     }
 
     std::thread run(const stop_token& token)

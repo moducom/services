@@ -87,6 +87,19 @@ public:
         return serviceToken;
     }
 
+
+    template <class TService, class ...TArgs>
+    void push_and_start(TArgs&&...args)
+    {
+        agents::EnttHelper e(entity.registry, entity.registry.create());
+        auto agent = new agents::StandaloneStdThread<TService, TArgs...>(e,
+             std::forward<TArgs&&>(args)...);
+        base_type::add(*agent);
+        // TODO: Incomplete, this is going to crash since thread ownership gets tossed
+        // to the wind
+        agent->run(stopSource.token());
+    }
+
     /// Be advised, this is a blocking call
     void stop(std::chrono::milliseconds timeout = std::chrono::milliseconds(2000))
     {
