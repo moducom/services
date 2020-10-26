@@ -110,9 +110,12 @@ public:
     typedef entt::sigh<void(int, char)> signal_type;
     signal_type signal;
     entt::sigh<void(Status)> statusSignal_;
+    entt::sink<void(Status)> sink;
+
 
     BaseBase(EnttHelper entity) :
-        entity(entity)
+        entity(entity),
+        sink{statusSignal_}
     {}
 
     Status status_ = Status::Unstarted;

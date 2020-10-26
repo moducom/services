@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 // doing this since C++20 is still so new.
 // consider putting this into estdlib
 

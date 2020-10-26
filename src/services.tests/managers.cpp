@@ -4,6 +4,8 @@
 
 #include <chrono>
 
+#include <cstring>
+
 using namespace moducom::services;
 
 // for scenarios where std::chrono::duration is a little more than we want
