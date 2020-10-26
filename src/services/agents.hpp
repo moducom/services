@@ -47,7 +47,9 @@ public:
 // DEBT: Fix bad naming
 class BaseBase
 {
+    // TODO: probably phase out this dependsOn, managing that externally now
     std::vector<entt::entity> dependsOn;
+
     EnttHelper entity;
     entt::sigh<void(BaseBase*, Status)> statusSignal_;
     entt::sigh<void(BaseBase*, Progress)> progressSignal_;

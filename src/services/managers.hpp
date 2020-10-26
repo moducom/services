@@ -4,6 +4,125 @@
 
 namespace moducom { namespace services { namespace managers {
 
+namespace internal {
+
+class StdThreadServiceToken : public ServiceToken
+{
+protected:
+    std::thread worker;
+
+    StdThreadServiceToken(const stop_token& stopToken) :
+        ServiceToken(stopToken)
+    {}
+
+    ~StdThreadServiceToken()
+    {
+        worker.detach();
+    }
+};
+
+// TAgent must be a StandaloneStdThread
+template <class TAgent>
+class SpecializedServiceToken : public StdThreadServiceToken
+{
+    TAgent& agent;
+
+public:
+    SpecializedServiceToken(const stop_token& stopToken, TAgent& agent) :
+        StdThreadServiceToken(stopToken),
+        agent(agent)
+    {
+
+    }
+
+    void start() override
+    {
+        worker = agent.run(stopToken);
+    }
+};
+
+}
+
+class StandaloneStdThreadManager : public agents::Aggregator
+{
+    stop_source stopSource;
+    agents::EnttHelper entity;
+    typedef agents::Aggregator base_type;
+
+    std::vector<agent_type*> _agents() const
+    {
+        // DEBT: dual dependsOn, need to fix that
+        return agents::Depender::dependsOn;
+    }
+
+public:
+    typedef agents::Aggregator::agent_type agent_type;
+
+    /// Creates a new service of type TService for this manager to track,
+    /// does *not* autostart it
+    /// \tparam TService
+    /// \tparam TArgs
+    /// \param args
+    template <class TService, class ...TArgs>
+    auto push(TArgs&&...args)
+    {
+        agents::EnttHelper e(entity.registry, entity.registry.create());
+        auto agent = new agents::StandaloneStdThread<TService, TArgs...>(e,
+                std::forward<TArgs&&>(args)...);
+        base_type::add(*agent);
+        internal::SpecializedServiceToken<decltype(agent)> serviceToken(stopSource.token(), agent);
+        return serviceToken;
+    }
+
+    /// Be advised, this is a blocking call
+    void stop()
+    {
+        stopSource.request_stop();
+
+        // Might be enough to merely set stop signal
+        for(agent_type* agent : _agents())
+        {
+            //agent->stop();
+        }
+
+        // DEBT: One single slow spinwait isn't too bad, but still not best practice
+        // DEBT: Would be nice to use event/sink instead of recounting every time
+        int stillRunning = 0;
+        do
+        {
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(100ms);
+            for (agent_type* agent : _agents())
+            {
+                if(agent->status() != Status::Stopped)
+                    stillRunning++;
+            }
+        }
+        while(stillRunning > 0);
+    }
+
+    ~StandaloneStdThreadManager()
+    {
+
+        for(agent_type* agent : _agents())
+        {
+            // DEBT: Watch out, since we set 'stopped' just *before* agent thread truly
+            // shuts down, it's possible to hit an invalid state (not a race condition really)
+            // and std::thread may throw an exception of improper shutdown
+            if(agent->status() != Status::Stopped)
+            {
+                // TODO: force agent's thread into detached mode and log an error that
+                // service couldn't shut down properly
+            }
+
+            // NOTE: thread ownership is currently held by SpecializedStartToken, which currently
+            // isn't owned by the agent, but perhaps should be
+
+            delete agent;
+        }
+    }
+};
+
 /// Handles both fixed-time and variable-time periodic interval agents
 /// Relies on external mechanism to call this at the right time
 /// TODO: Consider making the whole thing follow the system_clock (and friends)
