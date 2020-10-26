@@ -49,15 +49,18 @@ class BaseBase
 {
     std::vector<entt::entity> dependsOn;
     EnttHelper entity;
+    entt::sigh<void(BaseBase*, Status)> statusSignal_;
+    entt::sigh<void(BaseBase*, Progress)> progressSignal_;
 
 public:
-    entt::sigh<void(BaseBase*, Status)> statusSignal_;
     entt::sink<void(BaseBase*, Status)> statusSink;
+    entt::sink<void(BaseBase*, Progress)> progressSink;
 
 
     BaseBase(EnttHelper entity) :
             entity(entity),
-            statusSink{statusSignal_}
+            statusSink{statusSignal_},
+            progressSink{progressSignal_}
     {}
 
     Status status_ = Status::Unstarted;
@@ -75,11 +78,15 @@ public:
     void progress(short percentage, std::string message, const char* subsystem = nullptr)
     {
         Progress p{percentage, subsystem, message};
+
+        progressSignal_.publish(this, p);
     }
 
     void progress(short percentage)
     {
         Progress p{percentage, nullptr};
+
+        progressSignal_.publish(this, p);
     }
 
 public:
