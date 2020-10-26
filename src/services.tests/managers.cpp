@@ -234,10 +234,7 @@ TEST_CASE("managers")
 
             stop_source source;
 
-            // FIX: after s.run is called, source.request_stop() is not listened to
-            // perhaps it's a cache/volatility thing
-            //source.request_stop();
-
+            // remember, = && moves ownership of a thread
             std::thread worker = s.run(source.token());
 
             Status status = s.status();
@@ -262,6 +259,15 @@ TEST_CASE("managers")
         SECTION("manager")
         {
             managers::StandaloneStdThreadManager manager(enttHelper);
+
+            auto serviceToken = manager.push<Continuous1>(2);
+
+            serviceToken.start();
+
+            // FIX: If we don't stop(), some thread-related errors occur here mainly complaining
+            // from entt, likely because entt registry itself goes out of scope before thread
+            // does -- though I really don't recall interacting with registry on shutdown that much
+            manager.stop();
         }
     }
 }

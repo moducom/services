@@ -15,9 +15,16 @@ protected:
         ServiceToken(stopToken)
     {}
 
+    StdThreadServiceToken(StdThreadServiceToken&& moveFrom) :
+        ServiceToken(moveFrom.stopToken),
+        worker(std::move(moveFrom.worker))
+    {
+    }
+
     ~StdThreadServiceToken()
     {
-        worker.detach();
+        if(worker.joinable())
+            worker.detach();
     }
 };
 
@@ -30,6 +37,13 @@ class SpecializedServiceToken : public StdThreadServiceToken
 public:
     SpecializedServiceToken(const stop_token& stopToken, TAgent& agent) :
         StdThreadServiceToken(stopToken),
+        agent(agent)
+    {
+
+    }
+
+    SpecializedServiceToken(SpecializedServiceToken&& moveFrom) :
+        StdThreadServiceToken(std::move(moveFrom)),
         agent(agent)
     {
 
@@ -69,13 +83,16 @@ public:
         auto agent = new agents::StandaloneStdThread<TService, TArgs...>(e,
                 std::forward<TArgs&&>(args)...);
         base_type::add(*agent);
-        internal::SpecializedServiceToken<decltype(agent)> serviceToken(stopSource.token(), agent);
+        internal::SpecializedServiceToken<decltype(*agent)> serviceToken(stopSource.token(), *agent);
         return serviceToken;
     }
 
     /// Be advised, this is a blocking call
-    void stop()
+    void stop(std::chrono::milliseconds timeout = std::chrono::milliseconds(2000))
     {
+        using namespace std::chrono_literals;
+        constexpr auto slice = 100ms;
+
         stopSource.request_stop();
 
         // Might be enough to merely set stop signal
@@ -89,15 +106,20 @@ public:
         int stillRunning = 0;
         do
         {
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(100ms);
+            std::this_thread::sleep_for(slice);
             for (agent_type* agent : _agents())
             {
-                if(agent->status() != Status::Stopped)
+                Status status = agent->status();
+
+                if(status != Status::Stopped &&
+                    status != Status::Unstarted
+                    )
                     stillRunning++;
             }
+
+            timeout -= slice;
         }
-        while(stillRunning > 0);
+        while(stillRunning > 0 && timeout > slice.zero());
     }
 
     StandaloneStdThreadManager(agents::EnttHelper eh) :
