@@ -107,15 +107,13 @@ class BaseBase
     EnttHelper entity;
 
 public:
-    typedef entt::sigh<void(int, char)> signal_type;
-    signal_type signal;
     entt::sigh<void(Status)> statusSignal_;
-    entt::sink<void(Status)> sink;
+    entt::sink<void(Status)> statusSink;
 
 
     BaseBase(EnttHelper entity) :
         entity(entity),
-        sink{statusSignal_}
+        statusSink{statusSignal_}
     {}
 
     Status status_ = Status::Unstarted;
@@ -128,11 +126,6 @@ public:
     }
 
 public:
-    entt::sigh<void(Status)>& statusSignal()
-    {
-        return statusSignal_;
-    }
-
     int dependenciesRunningCount() const
     {
         int count = 0;

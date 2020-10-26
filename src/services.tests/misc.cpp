@@ -3,6 +3,16 @@
 
 using namespace moducom::services;
 
+struct Listener1
+{
+    Status status_ = Status::Error;
+
+    void onStatusChanged(Status status)
+    {
+        status_ = status;
+    }
+};
+
 TEST_CASE("misc")
 {
     entt::registry registry;
@@ -19,7 +29,12 @@ TEST_CASE("misc")
     SECTION("BaseBase")
     {
         agents::BaseBase base(enttHelper);
+        Listener1 listener1;
 
-        entt::sink sink{base.statusSignal()};
+        base.statusSink.connect<&Listener1::onStatusChanged>(listener1);
+
+        base.status(Status::Running);
+
+        REQUIRE(base.status() == listener1.status_);
     }
 }
