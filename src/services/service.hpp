@@ -186,8 +186,24 @@ class Depender
     bool satisfied_ = false;
 
 private:
+    void satisfied(bool satisfied)
+    {
+        if(satisfied == satisfied_) return;
+
+        satisfied_ = satisfied;
+        signalSatisfied.publish(satisfied);
+    }
+
+
     void dependentStatusChanged(Status status)
     {
+        bool anyNotRunning =
+                std::any_of(dependsOn.begin(), dependsOn.end(), [&](BaseBase* item)
+        {
+            return item->status() != Status::Running;
+        });
+
+        satisfied(anyNotRunning);
     }
 
 public:
