@@ -9,6 +9,8 @@ TEST_CASE("agents")
     agents::EnttHelper enttHelper(registry, registry.create());
     SECTION("event")
     {
+        using namespace std::chrono_literals;
+
         EventGenerator generator;
 
         agents::AsyncEvent<Event1> agent(enttHelper);
@@ -17,13 +19,18 @@ TEST_CASE("agents")
         {
             agent.construct(generator);
 
-            auto a = agent.onEvent(1);
+            {
+                auto a = agent.onEvent(1);
 
-            //a.get();
-            a.wait();
+                //a.get();
+                a.wait();
 
-            REQUIRE(a.valid());
-            REQUIRE(agent.service().value_ == 10);
+                REQUIRE(a.valid());
+                REQUIRE(agent.service().value_ == 10);
+            }
+
+            // doesn't help
+            //std::this_thread::sleep_for(500ms);
 
             // FIX: Crashing, don't know why
             agent.destruct();

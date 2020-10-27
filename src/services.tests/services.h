@@ -15,17 +15,21 @@ struct EventGenerator
 
 struct Event1 : moducom::services::ServiceBase
 {
-    entt::scoped_connection connection;
+    //entt::scoped_connection connection;
 
     int value_ = 0;
 
-    Event1(EventGenerator& generator)
+    EventGenerator& generator;
+
+    Event1(EventGenerator& generator) : generator(generator)
     {
-        connection = generator.sink.connect<&Event1::run>(this);
+        //connection =
+                generator.sink.connect<&Event1::run>(this);
     }
 
     ~Event1()
     {
+        generator.sink.disconnect<&Event1::run>(this);
         std::clog << "Got here" << std::endl;
     }
 

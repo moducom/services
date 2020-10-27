@@ -439,10 +439,9 @@ public:
     [[nodiscard]] auto onEvent(TArgs&&...args)
     {
         service_type& service = base_type::service();
-        auto a = std::async(std::launch::async,
+        return std::async(std::launch::async,
                 &service_type::run, &service,
                 std::forward<TArgs>(args)...);
-        return a;
     }
 };
 
