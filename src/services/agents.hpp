@@ -12,6 +12,7 @@
 #include <entt/entt.hpp>
 
 #include <algorithm>
+#include <future>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -421,6 +422,28 @@ auto make_standalone(EnttHelper enttHelper, TArgs&&... args)
             std::forward<TArgs>(args)...);
     return agent;
 }
+
+// uses std::async to run event on a different thread
+template <class TService>
+class AsyncEvent : public Base<TService>
+{
+    typedef TService service_type;
+    typedef Base<TService> base_type;
+
+public:
+    AsyncEvent(EnttHelper eh) :
+        base_type(eh)
+    {}
+
+    template <class ...TArgs>
+    [[nodiscard]] auto onEvent(TArgs&&...args)
+    {
+        auto a = std::async(
+                &service_type::run, base_type::service(),
+                std::forward<TArgs>(args)...);
+        return a;
+    }
+};
 
 }}}
 
