@@ -15,8 +15,6 @@ TEST_CASE("agents")
 
         //try
         {
-            // FIX: Crashing, don't know why
-            
             agent.construct(generator);
 
             auto a = agent.onEvent(1);
@@ -24,8 +22,10 @@ TEST_CASE("agents")
             //a.get();
             a.wait();
 
+            REQUIRE(a.valid());
             REQUIRE(agent.service().value_ == 10);
 
+            // FIX: Crashing, don't know why
             agent.destruct();
         }
         //catch(const std::exception& e)
