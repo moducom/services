@@ -438,8 +438,9 @@ public:
     template <class ...TArgs>
     [[nodiscard]] auto onEvent(TArgs&&...args)
     {
-        auto a = std::async(
-                &service_type::run, base_type::service(),
+        service_type& service = base_type::service();
+        auto a = std::async(std::launch::async,
+                &service_type::run, &service,
                 std::forward<TArgs>(args)...);
         return a;
     }

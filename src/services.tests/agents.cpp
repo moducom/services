@@ -13,7 +13,24 @@ TEST_CASE("agents")
 
         agents::AsyncEvent<Event1> agent(enttHelper);
 
-        //auto a = agent.onEvent(1);
-        //a.wait();
+        //try
+        {
+            // FIX: Crashing, don't know why
+            
+            agent.construct(generator);
+
+            auto a = agent.onEvent(1);
+
+            //a.get();
+            a.wait();
+
+            REQUIRE(agent.service().value_ == 10);
+
+            agent.destruct();
+        }
+        //catch(const std::exception& e)
+        {
+
+        }
     }
 }
