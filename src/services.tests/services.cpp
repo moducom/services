@@ -1,36 +1,7 @@
 #include "catch2/catch.hpp"
-#include <service.hpp>
+#include "services.h"
 
 using namespace moducom::services;
-
-
-struct EventGenerator
-{
-    entt::sigh<void (int)> signal;
-    entt::sink<void (int)> sink;
-
-    EventGenerator() :
-            sink{signal}
-    {}
-};
-
-struct Event1 : ServiceBase
-{
-    entt::scoped_connection connection;
-
-    int value_ = 0;
-
-    Event1(EventGenerator& generator)
-    {
-        connection = generator.sink.connect<&Event1::run>(this);
-    }
-
-    void run(int value)
-    {
-        value_ = value * 10;
-    }
-};
-
 
 
 TEST_CASE("raw services")
@@ -49,9 +20,7 @@ TEST_CASE("raw services")
 
             REQUIRE(service.value_ == 20);
         }
-        SECTION("service through agent")
-        {
 
-        }
+        REQUIRE(generator.sink.empty());
     }
 }

@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 
-#include <service.hpp>
+#include <services/service.hpp>
 
 #include <chrono>
 
