@@ -537,7 +537,7 @@ class AsyncEventQueue : public Base<TService>
 
         Item() {}
 
-        Item(bool stop_signal, event_args args) :
+        Item(bool stop_signal, event_args args = event_args()) :
             stop_signal(stop_signal), args(args)
         {}
     };
@@ -591,6 +591,7 @@ class AsyncEventQueue : public Base<TService>
         workerRunningMutex.unlock();
     }
 
+    // DEBT: Bring in stop_token& from outside
     stop_source stopSource;
     std::future<void> workerFuture;
 
@@ -599,13 +600,24 @@ public:
     ~AsyncEventQueue()
     {
         stop();
-        // TODO: empty out queue here, noting any non-stop-signal lingering events
+        {
+            auto lg = queue.lock_guard();
+            while(!queue.q().empty())
+            {
+                Item& item = queue.q().front();
+                if(!item.stop_signal)
+                {
+                    // TODO: note non-stop-signal lingering events
+                }
+                queue.q().pop();
+            }
+        }
     }
 
     void stop()
     {
         stopSource.stop_requested();
-        queue.emplace(true, event_args());
+        queue.emplace(true);
     }
 
     /// wait for worker thread to complete
