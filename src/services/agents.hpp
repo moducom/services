@@ -519,9 +519,9 @@ public:
 }
 
 template <class TService, class ...TArgs>
-class AsyncEventQueue : public AsyncEvent<TService>
+class AsyncEventQueue : public Base<TService>
 {
-    typedef AsyncEvent<TService> base_type;
+    typedef Base<TService> base_type;
     typedef std::tuple<TArgs...> event_args;
 
     struct Item
@@ -532,12 +532,46 @@ class AsyncEventQueue : public AsyncEvent<TService>
 
     internal::BlockingQueue<Item> queue;
 
+    ///
+    /// \param stopToken
+    /// @details Does a semi-spin wait (500ms per iteration) so as to check for 'sleep' and stop
+    /// condition
+    void worker(const stop_token& stopToken)
+    {
+        using namespace std::chrono_literals;
+        int counter = 10;
+
+        // Worker is always started with at least one entry in the queue, so we
+        // use a do/while
+
+        do
+        {
+            Item item;
+
+            {
+                auto lock = queue.unique_lock();
+
+                item = queue.q().front();
+                queue.q().pop();
+            }
+
+            base_type::service().run(item.args);
+        }
+        while(!stopToken.stop_requested() &&
+            counter-- > 0 &&
+            queue.wait_for_presence(500ms));
+    }
+
+    stop_source stopSource;
+    //std::future<
+
 public:
     AsyncEventQueue(EnttHelper eh) : base_type(eh) {}
 
     void run(TArgs&&...args)
     {
         queue.emplace(false, std::forward<TArgs>(args)...);
+        auto f = std::async(std::launch::async, &AsyncEventQueue::worker, this, stopSource.token());
     }
 };
 

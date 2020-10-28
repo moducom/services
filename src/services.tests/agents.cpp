@@ -24,35 +24,42 @@ TEST_CASE("agents")
 
         EventGenerator generator;
 
-        agents::AsyncEvent<Event1> agent(enttHelper);
-
+        SECTION("async")
         {
-            agent.construct(&agent, generator);
+            agents::AsyncEvent<Event1> agent(enttHelper);
 
-            SECTION("brute force")
             {
-#if ENABLE_ASYNC
-                auto a = agent.run(1);
+                agent.construct(&agent, generator);
 
-                a.wait();
-
-                REQUIRE(a.valid());
-#else
-                agent.service().run(1);
-#endif
-                REQUIRE(agent.service().value_ == 10);
-            }
-            SECTION("natural")
-            {
-                /*
-                 * Doesn't work since 'std::future' won't convert to bool
-                generator.signal.collect([&](int value)
+                SECTION("brute force")
                 {
-                }, 2); */
-                generator.signal.publish(2);
-            }
+#if ENABLE_ASYNC
+                    auto a = agent.run(1);
 
-            agent.destruct();
+                    a.wait();
+
+                    REQUIRE(a.valid());
+#else
+                    agent.service().run(1);
+#endif
+                    REQUIRE(agent.service().value_ == 10);
+                }SECTION("natural")
+                {
+                    /*
+                     * Doesn't work since 'std::future' won't convert to bool
+                    generator.signal.collect([&](int value)
+                    {
+                    }, 2); */
+                    // Doesn't *really* work since std::future destructs and blocks
+                    generator.signal.publish(2);
+                }
+
+                agent.destruct();
+            }
+        }
+        SECTION("async queue")
+        {
+            agents::AsyncEventQueue<Event1, int> agent(enttHelper);
         }
     }
 }
