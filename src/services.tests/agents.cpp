@@ -60,6 +60,8 @@ TEST_CASE("agents")
         SECTION("async queue")
         {
             agents::AsyncEventQueue<Event1, int> agent(enttHelper);
+
+            agent.run(1);
         }
     }
 }

@@ -488,6 +488,7 @@ public:
         cv.wait(lk, [&] {return !queue.empty();});
     }
 
+    // DEBT: Can probably do a check for a stop_token instead, somehow
     template <class Rep, class Period>
     bool wait_for_presence(const std::chrono::duration<Rep, Period>& timeout)
     {
@@ -499,7 +500,7 @@ public:
     void push(const value_type& value)
     {
         {
-            std::unique_lock<std::mutex> lk(cv_m);
+            std::lock_guard<std::mutex> lk(cv_m);
             queue.push(value);
         }
         cv.notify_one();
@@ -509,7 +510,7 @@ public:
     void emplace(TArgs&&...args)
     {
         {
-            std::unique_lock<std::mutex> lk(cv_m);
+            std::lock_guard<std::mutex> lk(cv_m);
             queue.emplace(std::forward<TArgs>(args)...);
         }
         cv.notify_one();
@@ -531,6 +532,10 @@ class AsyncEventQueue : public Base<TService>
     };
 
     internal::BlockingQueue<Item> queue;
+
+    // DEBT: I think we can do this with just the future variable
+    bool workerRunning = false;
+    std::mutex workerRunningMutex;
 
     ///
     /// \param stopToken
@@ -555,23 +560,47 @@ class AsyncEventQueue : public Base<TService>
                 queue.q().pop();
             }
 
-            base_type::service().run(item.args);
+            std::apply([&](const TArgs&... args)
+            {
+                base_type::service().run(args...);
+            }, item.args);
         }
         while(!stopToken.stop_requested() &&
             counter-- > 0 &&
             queue.wait_for_presence(500ms));
+
+        {
+            std::unique_lock<std::mutex> ul(workerRunningMutex);
+
+            workerRunning = false;
+        }
     }
 
     stop_source stopSource;
-    //std::future<
+    std::future<void> workerFuture;
 
 public:
     AsyncEventQueue(EnttHelper eh) : base_type(eh) {}
 
     void run(TArgs&&...args)
     {
-        queue.emplace(false, std::forward<TArgs>(args)...);
-        auto f = std::async(std::launch::async, &AsyncEventQueue::worker, this, stopSource.token());
+        //queue.emplace(false, std::make_tuple(std::forward<TArgs>(args)...));
+
+        {
+            std::unique_lock<std::mutex> ul(workerRunningMutex);
+
+            // If worker is already running, return
+            // FIX: Still have race condition where worker could be at very end of processing and
+            // block its 'workerRunning = false' right when we get here.  This would result in
+            // us returning early and never re-starting the worker
+            if(workerRunning)   return;
+
+            workerRunning = true;
+
+            // future destructor will block, if necessary while worker finishes up
+            workerFuture = std::async(std::launch::async, &AsyncEventQueue::worker, this,
+                                      std::ref(stopSource.token()));
+        }
     }
 };
 
