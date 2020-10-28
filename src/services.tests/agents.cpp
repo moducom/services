@@ -3,7 +3,7 @@
 
 using namespace moducom::services;
 
-#define ENABLE_ASYNC 0
+#define ENABLE_ASYNC 1
 
 TEST_CASE("agents")
 {

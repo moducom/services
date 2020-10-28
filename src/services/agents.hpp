@@ -429,6 +429,9 @@ class AsyncEvent : public Base<TService>
 {
     typedef TService service_type;
     typedef Base<TService> base_type;
+    typedef AsyncEvent<TService> this_type;
+
+public:
 
     template <class ...TArgs>
     void runner(TArgs&&...args)
@@ -436,6 +439,14 @@ class AsyncEvent : public Base<TService>
         service_type& service = base_type::service();
         service.run(std::forward<TArgs>(args)...);
     }
+
+    /*
+    void runner(int)
+    {
+        service_type& service = base_type::service();
+        //service_type& service = _this->service();
+        //service.run(std::forward<TArgs>(args)...);
+    } */
 
 public:
     AsyncEvent(EnttHelper eh) :
@@ -445,8 +456,14 @@ public:
     template <class ...TArgs>
     [[nodiscard]] auto onEvent(TArgs&&...args)
     {
+        service_type& service = base_type::service();
+        /*
         return std::async(std::launch::async,
-                &AsyncEvent::runner, this,
+                          &service_type::run, &service,
+                          std::forward<TArgs>(args)...); */
+
+        return std::async(std::launch::async,
+                &this_type::runner<TArgs...>, this,
                 std::forward<TArgs>(args)...);
     }
 };
