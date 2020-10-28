@@ -24,6 +24,14 @@ struct Event1 : moducom::services::ServiceBase
         connection = generator.sink.connect<&Event1::run>(this);
     }
 
+    template <class TAgent>
+    Event1(TAgent* agent, EventGenerator& generator)
+    {
+        connection = generator.sink.connect<&TAgent::template run<int> >(agent);
+        //connection = generator.sink.connect<&TAgent::run>(agent);
+    }
+
+
     ~Event1()
     {
         //std::clog << "Got here" << std::endl;

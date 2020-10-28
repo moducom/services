@@ -27,11 +27,12 @@ TEST_CASE("agents")
         agents::AsyncEvent<Event1> agent(enttHelper);
 
         {
-            agent.construct(generator);
+            agent.construct(&agent, generator);
 
+            SECTION("brute force")
             {
 #if ENABLE_ASYNC
-                auto a = agent.onEvent(1);
+                auto a = agent.run(1);
 
                 a.wait();
 
@@ -40,6 +41,15 @@ TEST_CASE("agents")
                 agent.service().run(1);
 #endif
                 REQUIRE(agent.service().value_ == 10);
+            }
+            SECTION("natural")
+            {
+                /*
+                 * Doesn't work since 'std::future' won't convert to bool
+                generator.signal.collect([&](int value)
+                {
+                }, 2); */
+                generator.signal.publish(2);
             }
 
             agent.destruct();

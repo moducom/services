@@ -439,8 +439,10 @@ public:
     template <class ...TArgs>
     void runner(TArgs&&...args)
     {
+        base_type::progress(0);
         service_type& service = base_type::service();
         service.run(std::forward<TArgs>(args)...);
+        base_type::progress(100);
     }
 
 public:
@@ -449,7 +451,7 @@ public:
     {}
 
     template <class ...TArgs>
-    [[nodiscard]] auto onEvent(TArgs&&...args)
+    [[nodiscard]] auto run(TArgs&&...args)
     {
         return std::async(std::launch::async,
                 &this_type::runner<TArgs...>, this,
