@@ -245,7 +245,7 @@ public:
 template <class TService>
 class Base : public BaseBase
 {
-    std::aligned_storage<sizeof(TService), alignof(TService)> raw;
+    std::aligned_storage_t<sizeof(TService), alignof(TService)> raw;
 
 protected:
     typedef TService service_type;
@@ -261,10 +261,13 @@ public:
         return reinterpret_cast<reference>(raw);
     }
 
+    // some guidance from
+    // https://stackoverflow.com/questions/28187732/placement-new-in-stdaligned-storage
     template <class ...TArgs>
     void construct(TArgs&&... args)
     {
-        new (&service()) service_type(std::forward<TArgs>(args)...);
+        //new (&service()) service_type(std::forward<TArgs>(args)...);
+        ::new ((void*) ::std::addressof(raw)) service_type(std::forward<TArgs>(args)...);
     }
 
     void destruct()
@@ -440,14 +443,6 @@ public:
         service.run(std::forward<TArgs>(args)...);
     }
 
-    /*
-    void runner(int)
-    {
-        service_type& service = base_type::service();
-        //service_type& service = _this->service();
-        //service.run(std::forward<TArgs>(args)...);
-    } */
-
 public:
     AsyncEvent(EnttHelper eh) :
         base_type(eh)
@@ -456,12 +451,6 @@ public:
     template <class ...TArgs>
     [[nodiscard]] auto onEvent(TArgs&&...args)
     {
-        service_type& service = base_type::service();
-        /*
-        return std::async(std::launch::async,
-                          &service_type::run, &service,
-                          std::forward<TArgs>(args)...); */
-
         return std::async(std::launch::async,
                 &this_type::runner<TArgs...>, this,
                 std::forward<TArgs>(args)...);

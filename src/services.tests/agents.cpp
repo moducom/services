@@ -9,6 +9,15 @@ TEST_CASE("agents")
 {
     entt::registry registry;
     agents::EnttHelper enttHelper(registry, registry.create());
+    SECTION("sanity checks")
+    {
+        EventGenerator generator;
+
+        agents::AsyncEvent<Event1> agent(enttHelper);
+
+        void* service = &agent.service();
+        agents::AsyncEvent<Event1>* _agent = &agent;
+    }
     SECTION("event")
     {
         using namespace std::chrono_literals;
@@ -22,6 +31,9 @@ TEST_CASE("agents")
             agent.construct(generator);
 
             {
+                Event1* service = &agent.service();
+                agents::AsyncEvent<Event1>* _agent = &agent;
+
 #if ENABLE_ASYNC
                 auto a = agent.onEvent(1);
 
