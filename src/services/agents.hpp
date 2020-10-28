@@ -482,6 +482,11 @@ public:
         return std::unique_lock<std::mutex>(cv_m);
     }
 
+    std::lock_guard<std::mutex> lock_guard()
+    {
+        return std::lock_guard<std::mutex>(cv_m);
+    }
+
     void wait_for_presence()
     {
         std::unique_lock<std::mutex> lk(cv_m);
@@ -503,7 +508,7 @@ public:
             std::lock_guard<std::mutex> lk(cv_m);
             queue.push(value);
         }
-        cv.notify_one();
+        cv.notify_all();
     }
 
     template <class ...TArgs>
@@ -513,7 +518,7 @@ public:
             std::lock_guard<std::mutex> lk(cv_m);
             queue.emplace(std::forward<TArgs>(args)...);
         }
-        cv.notify_one();
+        cv.notify_all();
     }
 };
 
@@ -529,6 +534,12 @@ class AsyncEventQueue : public Base<TService>
     {
         bool stop_signal;
         event_args args;
+
+        Item() {}
+
+        Item(bool stop_signal, event_args args) :
+            stop_signal(stop_signal), args(args)
+        {}
     };
 
     internal::BlockingQueue<Item> queue;
@@ -551,29 +562,33 @@ class AsyncEventQueue : public Base<TService>
 
         do
         {
+            workerRunningMutex.unlock();
+
             Item item;
 
             {
-                auto lock = queue.unique_lock();
+                auto lock = queue.lock_guard();
 
                 item = queue.q().front();
                 queue.q().pop();
             }
 
+            if(item.stop_signal)    break;
+
             std::apply([&](const TArgs&... args)
             {
                 base_type::service().run(args...);
             }, item.args);
+
+            workerRunningMutex.lock();
         }
         while(!stopToken.stop_requested() &&
             counter-- > 0 &&
             queue.wait_for_presence(500ms));
 
-        {
-            std::unique_lock<std::mutex> ul(workerRunningMutex);
+        workerRunning = false;
 
-            workerRunning = false;
-        }
+        workerRunningMutex.unlock();
     }
 
     stop_source stopSource;
@@ -581,10 +596,27 @@ class AsyncEventQueue : public Base<TService>
 
 public:
     AsyncEventQueue(EnttHelper eh) : base_type(eh) {}
+    ~AsyncEventQueue()
+    {
+        stop();
+        // TODO: empty out queue here, noting any non-stop-signal lingering events
+    }
+
+    void stop()
+    {
+        stopSource.stop_requested();
+        queue.emplace(true, event_args());
+    }
+
+    /// wait for worker thread to complete
+    void wait() const
+    {
+        workerFuture.wait();
+    }
 
     void run(TArgs&&...args)
     {
-        //queue.emplace(false, std::make_tuple(std::forward<TArgs>(args)...));
+        queue.emplace(false, event_args(std::forward<TArgs>(args)...));
 
         {
             std::unique_lock<std::mutex> ul(workerRunningMutex);

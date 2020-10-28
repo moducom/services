@@ -39,7 +39,7 @@ struct Event1 : moducom::services::ServiceBase
 
     void run(int value)
     {
-        value_ = value * 10;
+        value_ += value * 10;
     }
 };
 

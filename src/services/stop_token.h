@@ -10,14 +10,15 @@ namespace moducom { namespace services {
 class stop_token
 {
     //bool stop_requested_ = false;
-    std::atomic<bool> stop_requested_;
+    std::atomic<bool> stop_requested_ = false;
 
     friend class stop_source;
 
 public:
     [[nodiscard]] bool stop_requested() const noexcept
     {
-        return stop_requested_;
+        bool value = stop_requested_;
+        return value;
     }
 };
 

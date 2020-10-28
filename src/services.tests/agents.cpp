@@ -61,7 +61,17 @@ TEST_CASE("agents")
         {
             agents::AsyncEventQueue<Event1, int> agent(enttHelper);
 
+            agent.construct(generator);
+
             agent.run(1);
+            agent.run(2);
+            agent.run(3);
+
+            agent.wait();
+
+            REQUIRE(agent.service().value_ == 60);
+
+            agent.destruct();
         }
     }
 }
