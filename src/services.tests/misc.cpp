@@ -13,6 +13,11 @@ struct Listener1
     }
 };
 
+static void async1()
+{
+    std::clog << "hi2u from async1" << std::endl;
+}
+
 TEST_CASE("misc")
 {
     entt::registry registry;
@@ -36,5 +41,26 @@ TEST_CASE("misc")
         base.status(Status::Running);
 
         REQUIRE(base.status() == listener1.status_);
+    }
+    SECTION("std::async")
+    {
+        SECTION("standalone")
+        {
+            // because we're having such difficulty elsewhere
+            auto a = std::async(std::launch::async, async1);
+
+            a.wait();
+        }
+        SECTION("instance method")
+        {
+            EventGenerator generator;
+            Event1 event1(generator);
+
+            auto a = std::async(std::launch::async, &Event1::run, &event1, 1);
+
+            a.wait();
+
+            REQUIRE(event1.value_ == 10);
+        }
     }
 }

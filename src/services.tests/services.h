@@ -30,7 +30,7 @@ struct Event1 : moducom::services::ServiceBase
     ~Event1()
     {
         generator.sink.disconnect<&Event1::run>(this);
-        std::clog << "Got here" << std::endl;
+        //std::clog << "Got here" << std::endl;
     }
 
     void run(int value)

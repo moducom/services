@@ -3,6 +3,8 @@
 
 using namespace moducom::services;
 
+#define ENABLE_ASYNC 0
+
 TEST_CASE("agents")
 {
     entt::registry registry;
@@ -20,12 +22,16 @@ TEST_CASE("agents")
             agent.construct(generator);
 
             {
+#if ENABLE_ASYNC
                 auto a = agent.onEvent(1);
 
                 //a.get();
                 a.wait();
 
                 REQUIRE(a.valid());
+#else
+                agent.service().run(1);
+#endif
                 REQUIRE(agent.service().value_ == 10);
             }
 
