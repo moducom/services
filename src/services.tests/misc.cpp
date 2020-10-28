@@ -87,12 +87,16 @@ TEST_CASE("misc")
             REQUIRE(item_present);
             {
                 auto lock = bq.unique_lock();
-                REQUIRE(bq.front() == 1);
-                bq.pop();
-                REQUIRE(bq.empty());
+                REQUIRE(bq.q().front() == 1);
+                bq.q().pop();
+                REQUIRE(bq.q().empty());
             }
             item_present = bq.wait_for_presence(50ms);
             REQUIRE(!item_present);
+        }
+        SECTION("emplace")
+        {
+            bq.emplace(1);
         }
     }
 }

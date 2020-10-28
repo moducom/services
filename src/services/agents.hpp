@@ -475,6 +475,8 @@ class BlockingQueue
     std::mutex cv_m;
 
 public:
+    std::queue<T>& q() { return queue; }
+
     std::unique_lock<std::mutex> unique_lock()
     {
         return std::unique_lock<std::mutex>(cv_m);
@@ -485,8 +487,6 @@ public:
         std::unique_lock<std::mutex> lk(cv_m);
         cv.wait(lk, [&] {return !queue.empty();});
     }
-
-    bool empty() const { return queue.empty(); }
 
     template <class Rep, class Period>
     bool wait_for_presence(const std::chrono::duration<Rep, Period>& timeout)
@@ -505,17 +505,14 @@ public:
         cv.notify_one();
     }
 
-    /// MUST use unique_lock() first and wrap this call
-    /// \return
-    reference front()
+    template <class ...TArgs>
+    void emplace(TArgs&&...args)
     {
-        return queue.front();
-    }
-
-    /// MUST use unique_lock() first and wrap this call
-    void pop()
-    {
-        queue.pop();
+        {
+            std::unique_lock<std::mutex> lk(cv_m);
+            queue.emplace(std::forward<TArgs>(args)...);
+        }
+        cv.notify_one();
     }
 };
 
@@ -538,6 +535,10 @@ class AsyncEventQueue : public AsyncEvent<TService>
 public:
     AsyncEventQueue(EnttHelper eh) : base_type(eh) {}
 
+    void run(TArgs&&...args)
+    {
+        queue.emplace(false, std::forward<TArgs>(args)...);
+    }
 };
 
 }}}
