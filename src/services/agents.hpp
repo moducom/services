@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <future>
+#include <queue>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -450,6 +451,8 @@ public:
         base_type(eh)
     {}
 
+    // Nifty, but not as much of a fire-and-forget as one might like.  Remember,
+    // std::future blocks on destruction (C++14)
     template <class ...TArgs>
     [[nodiscard]] auto run(TArgs&&...args)
     {
@@ -457,6 +460,84 @@ public:
                 &this_type::runner<TArgs...>, this,
                 std::forward<TArgs>(args)...);
     }
+};
+
+namespace internal {
+
+template <class T>
+class BlockingQueue
+{
+    typedef T value_type;
+    typedef value_type& reference;
+    std::queue<T> queue;
+
+    std::condition_variable cv;
+    std::mutex cv_m;
+
+public:
+    std::unique_lock<std::mutex> unique_lock()
+    {
+        return std::unique_lock<std::mutex>(cv_m);
+    }
+
+    void wait_for_presence()
+    {
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait(lk, [&] {return !queue.empty();});
+    }
+
+    bool empty() const { return queue.empty(); }
+
+    template <class Rep, class Period>
+    bool wait_for_presence(const std::chrono::duration<Rep, Period>& timeout)
+    {
+        std::unique_lock<std::mutex> lk(cv_m);
+        return cv.wait_for(lk, timeout, [&] {return !queue.empty();});
+    }
+
+
+    void push(const value_type& value)
+    {
+        {
+            std::unique_lock<std::mutex> lk(cv_m);
+            queue.push(value);
+        }
+        cv.notify_one();
+    }
+
+    /// MUST use unique_lock() first and wrap this call
+    /// \return
+    reference front()
+    {
+        return queue.front();
+    }
+
+    /// MUST use unique_lock() first and wrap this call
+    void pop()
+    {
+        queue.pop();
+    }
+};
+
+}
+
+template <class TService, class ...TArgs>
+class AsyncEventQueue : public AsyncEvent<TService>
+{
+    typedef AsyncEvent<TService> base_type;
+    typedef std::tuple<TArgs...> event_args;
+
+    struct Item
+    {
+        bool stop_signal;
+        event_args args;
+    };
+
+    internal::BlockingQueue<Item> queue;
+
+public:
+    AsyncEventQueue(EnttHelper eh) : base_type(eh) {}
+
 };
 
 }}}

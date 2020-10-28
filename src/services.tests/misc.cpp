@@ -63,4 +63,36 @@ TEST_CASE("misc")
             REQUIRE(event1.value_ == 10);
         }
     }
+    SECTION("internal::BlockingQueue")
+    {
+        using namespace std::chrono_literals;
+
+        agents::internal::BlockingQueue<int> bq;
+
+        SECTION("just wait")
+        {
+            bool item_present = bq.wait_for_presence(50ms);
+            REQUIRE(!item_present);
+        }
+        SECTION("no waiting")
+        {
+            bq.push(1);
+            bool item_present = bq.wait_for_presence(50ms);
+            REQUIRE(item_present);
+        }
+        SECTION("some waiting")
+        {
+            bq.push(1);
+            bool item_present = bq.wait_for_presence(50ms);
+            REQUIRE(item_present);
+            {
+                auto lock = bq.unique_lock();
+                REQUIRE(bq.front() == 1);
+                bq.pop();
+                REQUIRE(bq.empty());
+            }
+            item_present = bq.wait_for_presence(50ms);
+            REQUIRE(!item_present);
+        }
+    }
 }
