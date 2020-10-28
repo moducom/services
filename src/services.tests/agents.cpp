@@ -26,18 +26,13 @@ TEST_CASE("agents")
 
         agents::AsyncEvent<Event1> agent(enttHelper);
 
-        //try
         {
             agent.construct(generator);
 
             {
-                Event1* service = &agent.service();
-                agents::AsyncEvent<Event1>* _agent = &agent;
-
 #if ENABLE_ASYNC
                 auto a = agent.onEvent(1);
 
-                //a.get();
                 a.wait();
 
                 REQUIRE(a.valid());
@@ -47,15 +42,7 @@ TEST_CASE("agents")
                 REQUIRE(agent.service().value_ == 10);
             }
 
-            // doesn't help
-            //std::this_thread::sleep_for(500ms);
-
-            // FIX: Crashing, don't know why
             agent.destruct();
-        }
-        //catch(const std::exception& e)
-        {
-
         }
     }
 }
