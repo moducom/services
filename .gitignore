@@ -7,3 +7,6 @@ build-catch-*/
 **/.idea/vcs.xml
 
 lib/conan/
+
+# VS2019 specific
+src/**/out/
