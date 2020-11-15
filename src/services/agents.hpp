@@ -158,6 +158,26 @@ public:
     }
 };
 
+template <class T>
+class SignalingVector : public std::vector<T>
+{
+    typedef std::vector<T> base_type;
+
+    entt::sigh<void (T)> signalAdded;
+public:
+    entt::sink<void (T)> sinkAdded;
+
+    SignalingVector() : sinkAdded{signalAdded}
+    {
+
+    }
+
+    template <class ...TArgs>
+    void push_back(TArgs&&...args)
+    {
+        base_type::push_back(std::forward<TArgs&&>(args)...);
+    }
+};
 
 // DEBT: Split this out into .h/.cpp flavor to reduce clutter in .hpp
 class Depender
