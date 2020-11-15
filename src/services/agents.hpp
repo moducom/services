@@ -240,22 +240,18 @@ public:
     }
 };
 
-
-template <class TService>
-class Base : public BaseBase
+// NOTE: Much like estd's value_evaporator and friends
+template <class TContained>
+class Container
 {
-    std::aligned_storage_t<sizeof(TService), alignof(TService)> raw;
+    std::aligned_storage_t<sizeof(TContained), alignof(TContained)> raw;
 
 protected:
-    typedef TService service_type;
-    typedef service_type& reference;
+    typedef TContained contained_type;
+    typedef contained_type& reference;
 
-    // DEBT: Eventually needs to be protected/friend access.  Making them public
-    // for ease of testing/bringup
 public:
-    Base(EnttHelper entity) : BaseBase(entity) {}
-
-    reference service()
+    reference contained()
     {
         return reinterpret_cast<reference>(raw);
     }
@@ -266,13 +262,37 @@ public:
     void construct(TArgs&&... args)
     {
         //new (&service()) service_type(std::forward<TArgs>(args)...);
-        ::new ((void*) ::std::addressof(raw)) service_type(std::forward<TArgs>(args)...);
+        ::new ((void*) ::std::addressof(raw)) contained_type(std::forward<TArgs>(args)...);
     }
 
     void destruct()
     {
-        service().~service_type();
+        contained().~contained_type();
     }
+};
+
+
+template <class TService>
+class Base :
+        public BaseBase,
+        // DEBT: Eventually needs to be protected/friend access.  Making them public
+        // for ease of testing/bringup
+        public Container<TService>
+{
+    typedef Container<TService> container_base;
+
+protected:
+    typedef TService service_type;
+    typedef service_type& reference;
+
+public:
+    Base(EnttHelper entity) : BaseBase(entity) {}
+
+    reference service()
+    {
+        return container_base::contained();
+    }
+
 };
 
 template <class TService, ServiceBase::ThreadPreference>
