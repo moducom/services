@@ -132,30 +132,6 @@ public:
     {
         return entity.get<Description>();
     }
-
-    void dependencyStatusUpdated(entt::registry&, entt::entity id)
-    {
-        // TODO: Optimize and consider the particular entity rather than re-evaluating
-        // them all each time for every entity status update
-        bool allRunning = dependenciesAllRunning();
-        if(allRunning)
-        {
-            if(status() == Status::WaitingOnDependency)
-                status(Status::Starting);
-        }
-    }
-
-    void addDependency(entt::entity id)
-    {
-        dependsOn.push_back(id);
-        entity.registry.on_update<Status>().connect<&BaseBase::dependencyStatusUpdated>(this);
-    }
-
-    void _start()
-    {
-        if(!dependenciesAllRunning())
-            status(Status::WaitingOnDependency);
-    }
 };
 
 template <class T>
@@ -234,6 +210,8 @@ public:
 
 class Aggregator :
         public BaseBase,
+        // TODO: Decouple this and make Depender 1:1 with entity since both Aggregator (root taxonomy)
+        // and regular agent can both have dependencies
         public Depender
 {
     void dependentStatus()
