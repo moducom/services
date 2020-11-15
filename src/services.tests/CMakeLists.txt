@@ -10,5 +10,10 @@ include(${CMAKE_SOURCE_DIR}/../../lib/conan/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 find_package(Threads REQUIRED)
 
-add_executable(services_tests agents.cpp main.cpp misc.cpp managers.cpp services.cpp services.h)
+add_executable(services_tests
+        agents.cpp
+        depend.cpp
+        main.cpp misc.cpp managers.cpp
+        services.cpp services.h
+        )
 target_link_libraries(services_tests CONAN_PKG::entt CONAN_PKG::catch2 Threads::Threads)
