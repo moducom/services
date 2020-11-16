@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 include_directories(..)
 add_subdirectory(../services build)
+add_subdirectory(../service.libusb libusb)
 
 include(${CMAKE_SOURCE_DIR}/../../lib/conan/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
@@ -16,4 +17,4 @@ add_executable(services_tests
         main.cpp misc.cpp managers.cpp
         services.cpp services.h
         )
-target_link_libraries(services_tests CONAN_PKG::entt CONAN_PKG::catch2 Threads::Threads)
+target_link_libraries(services_tests CONAN_PKG::entt CONAN_PKG::catch2 Threads::Threads service-libusb)

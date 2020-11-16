@@ -1,6 +1,7 @@
 [requires]
 catch2/2.11.1
 entt/3.5.2
+libusb/1.0.23
 
 [generators]
 cmake
