@@ -16,5 +16,13 @@ TEST_CASE("dependency")
         agents::Depender depender;
 
         depender.add(agent1);
+
+        REQUIRE(depender.anyNotRunning());
+        REQUIRE(!depender.satisfied());
+
+        depender.add(agent2);
+
+        REQUIRE(depender.anyNotRunning());
+        REQUIRE(!depender.satisfied());
     }
 }

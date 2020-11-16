@@ -18,4 +18,9 @@ enum class Status
     Error
 };
 
+inline bool is_running(Status status)
+{
+    return status == Status::Running || status == Status::Degraded;
+}
+
 }}

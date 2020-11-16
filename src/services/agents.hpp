@@ -146,11 +146,13 @@ public:
     {
         return std::any_of(dependsOn.begin(), dependsOn.end(), [&](Agent* item)
                 {
-                    return item->status() != Status::Running;
+                    return !is_running(item->status());
                 });
     }
 
     bool allRunning() const { return !anyNotRunning(); }
+
+    bool satisfied() const { return satisfied_; }
 
 private:
     void satisfied(bool satisfied)
@@ -164,7 +166,7 @@ private:
 
     void dependentStatusChanged(agent_type* agent, Status status)
     {
-        satisfied(anyNotRunning());
+        satisfied(allRunning());
     }
 
 public:
