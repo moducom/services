@@ -141,6 +141,17 @@ protected:
     entt::sigh<void (bool)> signalSatisfied;
     bool satisfied_ = false;
 
+public:
+    bool anyNotRunning() const
+    {
+        return std::any_of(dependsOn.begin(), dependsOn.end(), [&](Agent* item)
+                {
+                    return item->status() != Status::Running;
+                });
+    }
+
+    bool allRunning() const { return !anyNotRunning(); }
+
 private:
     void satisfied(bool satisfied)
     {
@@ -153,13 +164,7 @@ private:
 
     void dependentStatusChanged(agent_type* agent, Status status)
     {
-        bool anyNotRunning =
-                std::any_of(dependsOn.begin(), dependsOn.end(), [&](Agent* item)
-                {
-                    return item->status() != Status::Running;
-                });
-
-        satisfied(anyNotRunning);
+        satisfied(anyNotRunning());
     }
 
 public:
@@ -420,6 +425,39 @@ auto make_standalone(EnttHelper enttHelper, TArgs&&... args)
             std::forward<TArgs>(args)...);
     return agent;
 }
+
+
+// non-async external event responder.  Be sure to handle things quickly!
+template <class TService>
+class Event : public Base<TService>
+{
+    typedef TService service_type;
+    typedef Base<TService> base_type;
+
+    // TODO: Consolidate with AsyncEvent/AsyncEventQueue
+    // TODO: Revisit whether we always want to do progress 0-100 per iteration, probably not
+    template <class ...TArgs>
+    void runner(TArgs&&...args)
+    {
+        base_type::progress(0);
+        service_type& service = base_type::service();
+        service.run(std::forward<TArgs>(args)...);
+        base_type::progress(100);
+    }
+
+public:
+    Event(EnttHelper eh) : base_type(eh)
+    {
+
+    }
+
+    // remember, run is a gentle misnomer here, it really means "handle event of given args"
+    template <class ...TArgs>
+    void run(TArgs&&...args)
+    {
+        runner(std::forward<TArgs>(args)...);
+    }
+};
 
 // uses std::async to run event on a different thread
 template <class TService>
