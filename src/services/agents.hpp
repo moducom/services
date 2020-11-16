@@ -48,26 +48,22 @@ public:
     }
 };
 
-// DEBT: Fix bad naming
-class BaseBase
+class Agent
 {
-    // TODO: probably phase out this dependsOn, managing that externally now
-    std::vector<entt::entity> dependsOn;
-
-    entt::sigh<void(BaseBase*, Status)> statusSignal_;
-    entt::sigh<void(BaseBase*, Progress)> progressSignal_;
-    entt::sigh<void(BaseBase*, Alert)> alertSignal_;
+    entt::sigh<void(Agent*, Status)> statusSignal_;
+    entt::sigh<void(Agent*, Progress)> progressSignal_;
+    entt::sigh<void(Agent*, Alert)> alertSignal_;
 
 protected:
     EnttHelper entity;
 
 public:
-    entt::sink<void(BaseBase*, Status)> statusSink;
-    entt::sink<void(BaseBase*, Progress)> progressSink;
-    entt::sink<void(BaseBase*, Alert)> alertSink;
+    entt::sink<void(Agent*, Status)> statusSink;
+    entt::sink<void(Agent*, Progress)> progressSink;
+    entt::sink<void(Agent*, Alert)> alertSink;
 
 
-    BaseBase(EnttHelper entity) :
+    Agent(EnttHelper entity) :
             entity(entity),
             statusSink{statusSignal_},
             progressSink{progressSignal_},
@@ -106,26 +102,6 @@ public:
     }
 
 public:
-    int dependenciesRunningCount() const
-    {
-        int count = 0;
-
-        for(entt::entity id : dependsOn)
-        {
-            auto status = entity.registry.get<Status>(id);
-
-            if(status == Status::Running) count++;
-        }
-
-        return count;
-    }
-
-    bool dependenciesAllRunning() const
-    {
-        return dependenciesRunningCount() == dependsOn.size();
-    }
-
-
     Status status() const { return status_; }
 
     const Description& description() const
@@ -159,7 +135,7 @@ public:
 class Depender
 {
 protected:
-    typedef BaseBase agent_type;
+    typedef Agent agent_type;
 
     std::vector<agent_type*> dependsOn;
     entt::sigh<void (bool)> signalSatisfied;
@@ -178,7 +154,7 @@ private:
     void dependentStatusChanged(agent_type* agent, Status status)
     {
         bool anyNotRunning =
-                std::any_of(dependsOn.begin(), dependsOn.end(), [&](BaseBase* item)
+                std::any_of(dependsOn.begin(), dependsOn.end(), [&](Agent* item)
                 {
                     return item->status() != Status::Running;
                 });
@@ -209,7 +185,7 @@ public:
 
 
 class Aggregator :
-        public BaseBase,
+        public Agent,
         // TODO: Decouple this and make Depender 1:1 with entity since both Aggregator (root taxonomy)
         // and regular agent can both have dependencies
         public Depender
@@ -226,7 +202,7 @@ class Aggregator :
 
 public:
     Aggregator(EnttHelper eh) :
-        BaseBase(eh)
+        Agent(eh)
     {}
 
     void start()
@@ -274,7 +250,7 @@ public:
 
 template <class TService>
 class Base :
-        public BaseBase,
+        public Agent,
         // DEBT: Eventually needs to be protected/friend access.  Making them public
         // for ease of testing/bringup
         public Container<TService>
@@ -286,7 +262,7 @@ protected:
     typedef service_type& reference;
 
 public:
-    Base(EnttHelper entity) : BaseBase(entity) {}
+    Base(EnttHelper entity) : Agent(entity) {}
 
     reference service()
     {

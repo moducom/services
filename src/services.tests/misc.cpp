@@ -7,7 +7,7 @@ struct Listener1
 {
     Status status_ = Status::Error;
 
-    void onStatusChanged(agents::BaseBase* agent, Status status)
+    void onStatusChanged(agents::Agent* agent, Status status)
     {
         status_ = status;
     }
@@ -31,9 +31,9 @@ TEST_CASE("misc")
     {
         stop_source s;
     }
-    SECTION("BaseBase")
+    SECTION("Agent")
     {
-        agents::BaseBase base(enttHelper);
+        agents::Agent base(enttHelper);
         Listener1 listener1;
 
         base.statusSink.connect<&Listener1::onStatusChanged>(listener1);
