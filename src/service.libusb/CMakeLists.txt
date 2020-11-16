@@ -14,4 +14,7 @@ find_package(Threads REQUIRED)
 add_library(${PROJECT_NAME}
         usb.cpp usb.h)
 
+# DEBT: So damn sloppy
+target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
+
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads CONAN_PKG::libusb)

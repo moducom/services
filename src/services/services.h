@@ -3,6 +3,10 @@
 #include "status.h"
 #include "semver.h"
 
+#include <new>
+#include <string>
+#include "stop_token.h"
+
 namespace moducom { namespace services {
 
 class Description
