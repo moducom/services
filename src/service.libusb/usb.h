@@ -26,4 +26,30 @@ public:
     ~LibUsb();
 };
 
+
+class LibUsbDevice
+{
+    libusb_device_handle* const device_handle;
+
+public:
+    LibUsbDevice(libusb_device_handle* device_handle) :
+        device_handle(device_handle)
+    {}
+
+    libusb_device* device() const
+    {
+        return libusb_get_device(device_handle);
+    }
+
+    void claim(int interface_number)
+    {
+        libusb_claim_interface(device_handle, interface_number);
+    }
+
+    void release(int interface_number)
+    {
+        libusb_release_interface(device_handle, interface_number);
+    }
+};
+
 }}
