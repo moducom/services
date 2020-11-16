@@ -65,7 +65,7 @@ class StandaloneStdThreadManager : public agents::Aggregator
     std::vector<agent_type*> _agents() const
     {
         // DEBT: dual dependsOn, need to fix that
-        return agents::Depender::dependsOn;
+        return agents::Depender::dependsOn();
     }
 
 public:

@@ -75,6 +75,8 @@ public:
     void status(Status s)
     {
         status_ = s;
+        // DEBT: Having both ECS and event style status probably gonna cause issues later, should
+        // choose just one
         entity.registry.emplace_or_replace<Status>(entity.entity, s);
         statusSignal_.publish(this, s);
     }
@@ -137,14 +139,14 @@ class Depender
 protected:
     typedef Agent agent_type;
 
-    std::vector<agent_type*> dependsOn;
+    std::vector<agent_type*> dependsOn_;
     entt::sigh<void (bool)> signalSatisfied;
     bool satisfied_ = false;
 
 public:
     bool anyNotRunning() const
     {
-        return std::any_of(dependsOn.begin(), dependsOn.end(), [&](Agent* item)
+        return std::any_of(dependsOn_.begin(), dependsOn_.end(), [](Agent* item)
                 {
                     return !is_running(item->status());
                 });
@@ -175,15 +177,17 @@ public:
     void add(agent_type& agent)
     {
         agent.statusSink.connect<&Depender::dependentStatusChanged>(*this);
-        dependsOn.push_back(&agent);
+        dependsOn_.push_back(&agent);
         // Brute force a status change to update our own aggregated status
         dependentStatusChanged(&agent, agent.status());
     }
 
+    const std::vector<agent_type*>& dependsOn() const { return dependsOn_; }
+
     Depender() : sinkSatisfied{signalSatisfied} {}
     ~Depender()
     {
-        for(agent_type* agent : dependsOn)
+        for(agent_type* agent : dependsOn_)
         {
             agent->statusSink.disconnect<&Depender::dependentStatusChanged>(*this);
         }
@@ -441,16 +445,27 @@ class Event : public Base<TService>
     template <class ...TArgs>
     void runner(TArgs&&...args)
     {
+        base_type::status(Status::Running);
         base_type::progress(0);
         service_type& service = base_type::service();
         service.run(std::forward<TArgs>(args)...);
         base_type::progress(100);
+        base_type::status(Status::Waiting);
     }
 
 public:
     Event(EnttHelper eh) : base_type(eh)
     {
 
+    }
+
+    template <class ... TArgs>
+    void construct(TArgs&&...args)
+    {
+        base_type::status(Status::Starting);
+        base_type::construct(std::forward<TArgs>(args)...);
+        base_type::status(Status::Started);
+        base_type::status(Status::Waiting);
     }
 
     // remember, run is a gentle misnomer here, it really means "handle event of given args"

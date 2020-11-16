@@ -10,6 +10,7 @@ enum class Status
     Started,
     Running,
     Degraded,   ///< Partially running state
+    Waiting,    ///< Running, but waiting on a service-specific signal
     Pausing,
     Paused,
     Stopping,
@@ -18,9 +19,17 @@ enum class Status
     Error
 };
 
+// EXPERIMENTAL
+enum class RunningStatus
+{
+    Nominal,
+    Degraded,
+    Waiting
+};
+
 inline bool is_running(Status status)
 {
-    return status == Status::Running || status == Status::Degraded;
+    return status == Status::Running || status == Status::Degraded || status == Status::Waiting;
 }
 
 }}
