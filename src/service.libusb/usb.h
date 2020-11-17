@@ -13,10 +13,15 @@ namespace libusb {
 
 class Exception : public std::exception
 {
+public:
     const libusb_error error;
 
-public:
     Exception(libusb_error error) : error(error) {}
+
+    const char* what() const noexcept override
+    {
+        return libusb_error_name(error);
+    }
 };
 
 class Transfer
@@ -46,26 +51,7 @@ public:
 };
 
 
-class Device
-{
-    libusb_device* const device;
 
-public:
-    Device(libusb_device* device) : device(device) {}
-
-    Device(Device&&) = default;
-    Device(const Device&) = default;
-
-    void ref()
-    {
-        libusb_ref_device(device);
-    }
-
-    void unref()
-    {
-        libusb_unref_device(device);
-    }
-};
 
 
 class DeviceHandle
@@ -88,7 +74,8 @@ public:
     static DeviceHandle open(libusb_device* device)
     {
         libusb_device_handle* dh;
-        libusb_open(device, &dh);
+        auto error = (libusb_error)libusb_open(device, &dh);
+        if(error != LIBUSB_SUCCESS) throw Exception(error);
         return DeviceHandle(dh);
     }
 
@@ -159,6 +146,33 @@ public:
         auto result = (libusb_error) libusb_get_descriptor(device_handle, desc_type, desc_index, data, length);
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+};
+
+
+class Device
+{
+    libusb_device* const device;
+
+public:
+    Device(libusb_device* device) : device(device) {}
+
+    Device(Device&&) = default;
+    Device(const Device&) = default;
+
+    void ref()
+    {
+        libusb_ref_device(device);
+    }
+
+    void unref()
+    {
+        libusb_unref_device(device);
+    }
+
+    DeviceHandle open()
+    {
+        return DeviceHandle::open(device);
     }
 };
 

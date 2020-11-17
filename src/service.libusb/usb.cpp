@@ -5,25 +5,44 @@ namespace moducom { namespace services {
 
 inline void LibUsb::add_device(libusb_device* device)
 {
+    libusb::Device d(device);
+
     entt::entity id = registry.create();
 
     auto& device_descriptor = registry.emplace<libusb_device_descriptor>(id);
 
-    bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
-
     libusb_get_device_descriptor(device, &device_descriptor);
 
-    libusb_device* should_be_same = libusb_ref_device(device);
+    bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
+
+    d.ref();
     registry.emplace<libusb_device*>(id, device);
 
     uint8_t port_number = libusb_get_port_number(device);
 
     registry.emplace<uint8_t>(id, port_number);
+
+    {
+        // Gets LIBUSB_ERROR_ACCESS
+        //libusb::Guard<libusb::DeviceHandle> handle(device);
+
+        /*
+        unsigned char* buf = handle->alloc(10);
+        handle->free(buf, 10); */
+
+        /*
+        libusb_interface_descriptor interface_descriptor;
+
+        libusb_get_descriptor(device, LIBUSB_DT_INTERFACE, 0, &interface_descriptor,
+            LIBUSB_DT_INTERFACE_SIZE); */
+    }
 }
 
 
 inline void LibUsb::remove_device(libusb_device* device)
 {
+    libusb::Device d(device);
+
     auto devices = registry.view<libusb_device*>();
 
     auto result = std::find_if(std::begin(devices), std::end(devices), [&](entt::entity entity)
@@ -34,7 +53,7 @@ inline void LibUsb::remove_device(libusb_device* device)
     if(result != std::end(devices))
     {
         entt::entity found = *result;
-        libusb_unref_device(device);
+        d.unref();
         registry.remove_all(found);
     }
 }
@@ -58,17 +77,6 @@ inline void LibUsb::refresh_devices()
 
         add_device(device);
 
-        /*
-        libusb::Guard<libusb::DeviceHandle> handle(device);
-
-        unsigned char* buf = handle->alloc(10);
-        handle->free(buf, 10); */
-
-        /*
-        libusb_interface_descriptor interface_descriptor;
-
-        libusb_get_descriptor(device, LIBUSB_DT_INTERFACE, 0, &interface_descriptor,
-            LIBUSB_DT_INTERFACE_SIZE); */
     }
 
     libusb_free_device_list(device_list, 1);
