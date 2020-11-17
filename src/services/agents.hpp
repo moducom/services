@@ -174,6 +174,16 @@ private:
 public:
     entt::sink<void (bool)> sinkSatisfied;
 
+    void clear()
+    {
+        for (agent_type* agent : dependsOn_)
+        {
+            agent->statusSink.disconnect<&Depender::dependentStatusChanged>(*this);
+        }
+
+        dependsOn_.clear();
+    }
+
     void add(agent_type& agent)
     {
         agent.statusSink.connect<&Depender::dependentStatusChanged>(*this);
@@ -187,10 +197,7 @@ public:
     Depender() : sinkSatisfied{signalSatisfied} {}
     ~Depender()
     {
-        for(agent_type* agent : dependsOn_)
-        {
-            agent->statusSink.disconnect<&Depender::dependentStatusChanged>(*this);
-        }
+        clear();
     }
 };
 

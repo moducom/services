@@ -141,6 +141,8 @@ public:
 
     ~StandaloneStdThreadManager()
     {
+        // DEBT: Clear out dependencies -- works, but is nonintuitive the way this reads
+        base_type::clear();
 
         for(agent_type* agent : _agents())
         {
