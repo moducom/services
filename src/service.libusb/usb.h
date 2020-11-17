@@ -4,6 +4,8 @@
 #include "services/services.h"
 #include <stdexcept>
 
+#include <entt/entity/registry.hpp>
+
 namespace moducom {
 
 // raw libusb C++ wrappers, nothing fancy here
@@ -123,6 +125,8 @@ class LibUsb
     libusb_device** device_list;
     ssize_t device_list_count;
     libusb_hotplug_callback_handle hotplug_callback_handle;
+
+    entt::registry registry;
 
     void refresh_devices();
 

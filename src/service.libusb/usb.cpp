@@ -1,12 +1,39 @@
 #include "usb.h"
+#include <entt/entt.hpp>
 
 namespace moducom { namespace services {
-
 
 // NOTE: Can't truly do a refresh here yet because we have to free device list too
 inline void LibUsb::refresh_devices()
 {
+    // DEBT: Unlikely we really want to fully clear this -
+    // - for main init, not necessary
+    // - for updates, a merge would be preferable
+    registry.clear();
+
     device_list_count = libusb_get_device_list(context, &device_list);
+
+    for (int i = 0; i < device_list_count; i++)
+    {
+        libusb_device* device = device_list[i];
+        entt::entity id = registry.create();
+
+        auto& device_descriptor = registry.emplace<libusb_device_descriptor>(id);
+
+        bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
+
+        libusb_get_device_descriptor(device, &device_descriptor);
+
+        /*
+        libusb_interface_descriptor interface_descriptor;
+
+        libusb_get_descriptor(device, LIBUSB_DT_INTERFACE, 0, &interface_descriptor,
+            LIBUSB_DT_INTERFACE_SIZE); */
+
+        uint8_t port_number = libusb_get_port_number(device);
+
+        registry.emplace<uint8_t>(id, port_number);
+    }
 }
 
 LibUsb::LibUsb()
