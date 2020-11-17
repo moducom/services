@@ -45,6 +45,15 @@ public:
     }
 };
 
+
+class Device
+{
+    libusb_device* const device;
+
+public:
+    Device(libusb_device* device) : device(device) {}
+};
+
 class DeviceHandle
 {
     libusb_device_handle* const device_handle;
@@ -53,9 +62,25 @@ public:
     DeviceHandle(libusb_device_handle* device_handle) :
             device_handle(device_handle) {}
 
+    DeviceHandle(DeviceHandle&&) = default;
+    DeviceHandle(const DeviceHandle&) = default;
+
     libusb_device* device() const
     {
         return libusb_get_device(device_handle);
+    }
+
+    static DeviceHandle open(libusb_device* device)
+    {
+        libusb_device_handle* dh;
+        libusb_open(device, &dh);
+        return DeviceHandle(dh);
+    }
+
+    void close()
+    {
+        // FIX: Seems to lock up
+        libusb_close(device_handle);
     }
 
     void claim(int interface_number)
@@ -112,6 +137,35 @@ public:
                                                           transferred, timeout);
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
+    void get_descriptor(uint8_t desc_type, uint8_t desc_index, unsigned char* data, int length)
+    {
+        auto result = (libusb_error) libusb_get_descriptor(device_handle, desc_type, desc_index, data, length);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+};
+
+template <class T>
+struct Guard;
+
+template <>
+class Guard<DeviceHandle>
+{
+    DeviceHandle handle;
+
+public:
+    Guard(libusb_device* device) :
+        handle(DeviceHandle::open(device))
+    {
+    }
+
+    DeviceHandle* operator ->() { return &handle; }
+
+    ~Guard()
+    {
+        handle.close();
     }
 };
 

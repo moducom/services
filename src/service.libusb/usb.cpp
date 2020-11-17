@@ -25,6 +25,12 @@ inline void LibUsb::refresh_devices()
         libusb_get_device_descriptor(device, &device_descriptor);
 
         /*
+        libusb::Guard<libusb::DeviceHandle> handle(device);
+
+        unsigned char* buf = handle->alloc(10);
+        handle->free(buf, 10); */
+
+        /*
         libusb_interface_descriptor interface_descriptor;
 
         libusb_get_descriptor(device, LIBUSB_DT_INTERFACE, 0, &interface_descriptor,
