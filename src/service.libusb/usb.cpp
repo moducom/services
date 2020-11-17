@@ -13,6 +13,7 @@ inline void LibUsb::add_device(libusb_device* device)
 
     libusb_get_device_descriptor(device, &device_descriptor);
 
+    libusb_device* should_be_same = libusb_ref_device(device);
     registry.emplace<libusb_device*>(id, device);
 
     uint8_t port_number = libusb_get_port_number(device);
@@ -20,9 +21,30 @@ inline void LibUsb::add_device(libusb_device* device)
     registry.emplace<uint8_t>(id, port_number);
 }
 
+
+inline void LibUsb::remove_device(libusb_device* device)
+{
+    auto devices = registry.view<libusb_device*>();
+
+    auto result = std::find_if(std::begin(devices), std::end(devices), [&](entt::entity entity)
+    {
+        return devices.get(entity) == device;
+    });
+
+    if(result != std::end(devices))
+    {
+        entt::entity found = *result;
+        libusb_unref_device(device);
+        registry.remove_all(found);
+    }
+}
+
 // NOTE: Can't truly do a refresh here yet because we have to free device list too
 inline void LibUsb::refresh_devices()
 {
+    libusb_device** device_list;
+    ssize_t device_list_count;
+
     // DEBT: Unlikely we really want to fully clear this -
     // - for main init, not necessary
     // - for updates, a merge would be preferable
@@ -48,12 +70,23 @@ inline void LibUsb::refresh_devices()
         libusb_get_descriptor(device, LIBUSB_DT_INTERFACE, 0, &interface_descriptor,
             LIBUSB_DT_INTERFACE_SIZE); */
     }
+
+    libusb_free_device_list(device_list, 1);
 }
 
 void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
                       libusb_hotplug_event event)
 {
-    add_device(device);
+    switch(event)
+    {
+        case LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED:
+            add_device(device);
+            break;
+
+        case LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT:
+            remove_device(device);
+            break;
+    }
 }
 
 LibUsb::LibUsb()
@@ -63,8 +96,8 @@ LibUsb::LibUsb()
     if(error) throw libusb::Exception(error);
 
     // TOOD: Need to populate out into registry rather than hold on to device_list
-    //if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
-    if(false)
+    if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
+    //if(false)
     {
         libusb_hotplug_register_callback(
                 context,
@@ -91,7 +124,6 @@ LibUsb::LibUsb()
 LibUsb::~LibUsb()
 {
     libusb_hotplug_deregister_callback(context, hotplug_callback_handle);
-    libusb_free_device_list(device_list, 1);
     libusb_exit(context);
 }
 

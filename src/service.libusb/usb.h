@@ -55,7 +55,18 @@ public:
 
     Device(Device&&) = default;
     Device(const Device&) = default;
+
+    void ref()
+    {
+        libusb_ref_device(device);
+    }
+
+    void unref()
+    {
+        libusb_unref_device(device);
+    }
 };
+
 
 class DeviceHandle
 {
@@ -73,6 +84,7 @@ public:
         return libusb_get_device(device_handle);
     }
 
+    //  libusb_open() adds another reference which is later destroyed by libusb_close().
     static DeviceHandle open(libusb_device* device)
     {
         libusb_device_handle* dh;
@@ -179,13 +191,12 @@ namespace services {
 class LibUsb
 {
     libusb_context* context;
-    libusb_device** device_list;
-    ssize_t device_list_count;
     libusb_hotplug_callback_handle hotplug_callback_handle;
 
     entt::registry registry;
 
     void add_device(libusb_device*);
+    void remove_device(libusb_device*);
     void refresh_devices();
 
     void hotplug_callback(libusb_context* context, libusb_device* device,
