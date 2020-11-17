@@ -44,7 +44,7 @@ public:
 
     SpecializedServiceToken(SpecializedServiceToken&& moveFrom) :
         StdThreadServiceToken(std::move(moveFrom)),
-        agent(agent)
+        agent(moveFrom.agent)
     {
 
     }

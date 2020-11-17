@@ -609,6 +609,8 @@ class AsyncEventQueue : public Base<TService>
         // Worker is always started with at least one entry in the queue, so we
         // use a do/while
 
+        workerRunningMutex.lock();
+
         do
         {
             workerRunningMutex.unlock();
