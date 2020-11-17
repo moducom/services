@@ -10,3 +10,4 @@ lib/conan/
 
 # VS2019 specific
 src/**/out/
+.vs/
