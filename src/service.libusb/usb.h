@@ -17,6 +17,32 @@ public:
     Exception(libusb_error error) : error(error) {}
 };
 
+class Transfer
+{
+    libusb_transfer* const transfer;
+
+public:
+    Transfer(int iso_packets) : transfer(libusb_alloc_transfer(iso_packets))
+    {
+
+    }
+
+    ~Transfer()
+    {
+        libusb_free_transfer(transfer);
+    }
+
+    libusb_error submit()
+    {
+        return (libusb_error) libusb_submit_transfer(transfer);
+    }
+
+    libusb_error cancel()
+    {
+        return (libusb_error) libusb_cancel_transfer(transfer);
+    }
+};
+
 class DeviceHandle
 {
     libusb_device_handle* const device_handle;
@@ -64,6 +90,24 @@ public:
     void free(unsigned char* buffer, size_t length)
     {
         auto result = (libusb_error) libusb_dev_mem_free(device_handle, buffer, length);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
+    void control_transfer(uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+                          unsigned char* data, uint16_t wLength, unsigned int timeout)
+    {
+        auto result = (libusb_error) libusb_control_transfer(device_handle, bmRequestType, bRequest, wValue,
+                                                             wIndex, data, wLength, timeout);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
+    void bulk_transfer(unsigned char endpoint, unsigned char* data, int length,
+                       int* transferred, unsigned timeout)
+    {
+        auto result = (libusb_error) libusb_bulk_transfer(device_handle, endpoint, data, length,
+                                                          transferred, timeout);
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
