@@ -3,6 +3,23 @@
 
 namespace moducom { namespace services {
 
+inline void LibUsb::add_device(libusb_device* device)
+{
+    entt::entity id = registry.create();
+
+    auto& device_descriptor = registry.emplace<libusb_device_descriptor>(id);
+
+    bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
+
+    libusb_get_device_descriptor(device, &device_descriptor);
+
+    registry.emplace<libusb_device*>(id, device);
+
+    uint8_t port_number = libusb_get_port_number(device);
+
+    registry.emplace<uint8_t>(id, port_number);
+}
+
 // NOTE: Can't truly do a refresh here yet because we have to free device list too
 inline void LibUsb::refresh_devices()
 {
@@ -16,13 +33,8 @@ inline void LibUsb::refresh_devices()
     for (int i = 0; i < device_list_count; i++)
     {
         libusb_device* device = device_list[i];
-        entt::entity id = registry.create();
 
-        auto& device_descriptor = registry.emplace<libusb_device_descriptor>(id);
-
-        bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
-
-        libusb_get_device_descriptor(device, &device_descriptor);
+        add_device(device);
 
         /*
         libusb::Guard<libusb::DeviceHandle> handle(device);
@@ -35,30 +47,41 @@ inline void LibUsb::refresh_devices()
 
         libusb_get_descriptor(device, LIBUSB_DT_INTERFACE, 0, &interface_descriptor,
             LIBUSB_DT_INTERFACE_SIZE); */
-
-        uint8_t port_number = libusb_get_port_number(device);
-
-        registry.emplace<uint8_t>(id, port_number);
     }
+}
+
+void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
+                      libusb_hotplug_event event)
+{
+    add_device(device);
 }
 
 LibUsb::LibUsb()
 {
-    int success = libusb_init(&context);
+    auto error = (libusb_error)libusb_init(&context);
 
-    refresh_devices();
+    if(error) throw libusb::Exception(error);
 
-    libusb_hotplug_register_callback(
-        context,
-        LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, // | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, // "It is the user's responsibility to call libusb_close"
-        LIBUSB_HOTPLUG_NO_FLAGS,
-        LIBUSB_HOTPLUG_MATCH_ANY,
-        LIBUSB_HOTPLUG_MATCH_ANY,
-        LIBUSB_HOTPLUG_MATCH_ANY,
-        &hotplug_callback,
-        this,
-        &hotplug_callback_handle
+    // TOOD: Need to populate out into registry rather than hold on to device_list
+    //if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
+    if(false)
+    {
+        libusb_hotplug_register_callback(
+                context,
+                LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, // | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, // "It is the user's responsibility to call libusb_close"
+                LIBUSB_HOTPLUG_ENUMERATE,
+                LIBUSB_HOTPLUG_MATCH_ANY,
+                LIBUSB_HOTPLUG_MATCH_ANY,
+                LIBUSB_HOTPLUG_MATCH_ANY,
+                &hotplug_callback,
+                this,
+                &hotplug_callback_handle
         );
+    }
+    else
+    {
+        refresh_devices();
+    }
 
     //libusb_device_descriptor d;
 

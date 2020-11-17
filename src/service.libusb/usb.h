@@ -52,6 +52,9 @@ class Device
 
 public:
     Device(libusb_device* device) : device(device) {}
+
+    Device(Device&&) = default;
+    Device(const Device&) = default;
 };
 
 class DeviceHandle
@@ -182,12 +185,17 @@ class LibUsb
 
     entt::registry registry;
 
+    void add_device(libusb_device*);
     void refresh_devices();
+
+    void hotplug_callback(libusb_context* context, libusb_device* device,
+                          libusb_hotplug_event event);
 
     // "This callback may be called by an internal event thread and as such it is recommended the callback do minimal processing before returning."
     static int hotplug_callback(libusb_context* context, libusb_device* device,
                                  libusb_hotplug_event event, void* user_data)
     {
+        ((LibUsb*)user_data)->hotplug_callback(context, device, event);
         return 0;
     }
 
