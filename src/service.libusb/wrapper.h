@@ -184,6 +184,37 @@ public:
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
+
+    bool kernel_driver_active(int if_num)
+    {
+        int result = libusb_kernel_driver_active(device_handle, if_num);
+
+        if(result == 1) return true;
+        else if(result == 0) return false;
+        else throw Exception((libusb_error)result);
+    }
+
+    void detach_kernel_driver(int interface_number)
+    {
+        auto result = (libusb_error) libusb_detach_kernel_driver(device_handle, interface_number);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
+    void claim_interface(int interface_number)
+    {
+        auto result = (libusb_error) libusb_claim_interface(device_handle, interface_number);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
+
+    void release_interface(int interface_number)
+    {
+        auto result = (libusb_error) libusb_release_interface(device_handle, interface_number);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
 };
 
 

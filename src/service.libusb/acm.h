@@ -34,14 +34,19 @@ struct
 class LibUsbBidirectionalDeviceBase
 {
 protected:
+    entt::sigh<void (unsigned char*, int)> sighTransferReceived;
+
     libusb::DeviceHandle deviceHandle;
 
     libusb::Transfer in;
     libusb::Transfer out;
     libusb::Transfer control;
 public:
+    entt::sink<void (unsigned char*, int)> sinkTransferReceived;
+
     LibUsbBidirectionalDeviceBase(libusb::DeviceHandle deviceHandle) :
-        deviceHandle(deviceHandle)
+        deviceHandle(deviceHandle),
+        sinkTransferReceived{sighTransferReceived}
     {
         libusb_transfer* t = control;
 
@@ -66,7 +71,8 @@ public:
     {
         libusb_transfer* t = out;
 
-        uint8_t inEndpoint = 0x81;
+        // FIX: Hardcoded for CP210x
+        uint8_t inEndpoint = 0x82;
         uint8_t outEndpoint = 0x01;
 
         // DEBT: only invalid in unit test scenarios
@@ -100,6 +106,11 @@ public:
 
                 t->buffer = (unsigned char*) malloc(1);
             }
+
+            // kick off listening
+            libusb_error error = in.submit();
+
+            if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
         }
     }
 
@@ -152,7 +163,8 @@ public:
                                   0, 0, sizeof(AcmLineCoding));
         control.fill_control_transfer(deviceHandle, raw, _transferCallback, this, 1000);
 
-        // FIX: Doesn't kick off a submit yet
+        // DEBT: Need to pay attention to any errors
+        out.submit();
     }
 
     void sendCharacter(char c)
