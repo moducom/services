@@ -142,6 +142,13 @@ public:
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
+
+    void get_string_descriptor(uint8_t desc_index, uint16_t langid, unsigned char* data, int length)
+    {
+        auto result = (libusb_error) libusb_get_string_descriptor(device_handle, langid, desc_index, data, length);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
 };
 
 
