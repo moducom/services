@@ -19,6 +19,7 @@ public:
     }
 };
 
+// only wrapper class which auto allocs/frees itself
 class Transfer
 {
     libusb_transfer* const transfer;
@@ -33,6 +34,11 @@ public:
         transfer(libusb_alloc_transfer(iso_packets))
     {
         transfer->dev_handle = dev_handle;
+    }
+
+    operator libusb_transfer* const () const
+    {
+        return transfer;
     }
 
     ~Transfer()
