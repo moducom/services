@@ -2,6 +2,37 @@
 
 namespace moducom { namespace services {
 
+void AcmLibUsb::transferCallbackBulk(libusb_transfer* transfer)
+{
+    // DEBT: Have to do this first because we only are using one buffer at the moment
+    sighTransferReceived.publish(transfer->buffer, transfer->actual_length);
+
+    std::string test((char*)transfer->buffer);
+
+    if(transfer == in)
+    {
+        in.submit();
+    }
+}
+
+
+void AcmLibUsb::transferCallbackControl(libusb_transfer* transfer)
+{
+    auto control_setup = (libusb_control_setup*) transfer->buffer;
+
+    switch((AcmRequestTypeType)control_setup->bmRequestType)
+    {
+        case AcmRequestTypeType::Type1:
+            switch((AcmRequestType)control_setup->bRequest)
+            {
+                case AcmRequestType::SET_CONTROL_LINE_STATE:
+                    break;
+            }
+            break;
+    }
+}
+
+
 inline void AcmLibUsb::transferCallback(libusb_transfer* transfer)
 {
     if(transfer->status != LIBUSB_TRANSFER_COMPLETED)
@@ -21,18 +52,17 @@ inline void AcmLibUsb::transferCallback(libusb_transfer* transfer)
         return;
     }
 
-    auto control_setup = (libusb_control_setup*) transfer->buffer;
-
-    switch((AcmRequestTypeType)control_setup->bmRequestType)
+    switch(transfer->type)
     {
-        case AcmRequestTypeType::Type1:
-            switch((AcmRequestType)control_setup->bRequest)
-            {
-                case AcmRequestType::SET_CONTROL_LINE_STATE:
-                    break;
-            }
+        case LIBUSB_TRANSFER_TYPE_BULK:
+            transferCallbackBulk(transfer);
+            break;
+
+        case LIBUSB_TRANSFER_TYPE_CONTROL:
+            transferCallbackControl(transfer);
             break;
     }
+
 }
 
 void AcmLibUsb::_transferCallback(libusb_transfer* transfer)
@@ -43,6 +73,56 @@ void AcmLibUsb::_transferCallback(libusb_transfer* transfer)
     if(transfer->status == LIBUSB_TRANSFER_CANCELLED)   return;
 
     ((AcmLibUsb*)transfer->user_data)->transferCallback(transfer);
+}
+
+
+AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle) :
+    base_type(deviceHandle)
+{
+    libusb_transfer* t = out;
+
+    // FIX: Hardcoded for CP210x
+    uint8_t inEndpoint = 0x82;
+    uint8_t outEndpoint = 0x01;
+    uint16_t inSize = 64;
+
+    // DEBT: only invalid in unit test scenarios
+    if(deviceHandle.valid())
+    {
+        // TODO: Optimization/experimentation - see if we can have a "large" and "small"
+        // transfer block greater than 1 character
+
+        // set up bulk transfers for in and out.  Leaving buffer as null as we
+        // play some games to assign that manually below
+        out.fill_bulk_transfer(deviceHandle, outEndpoint, nullptr, 1,
+                               _transferCallback, this, 1000);
+
+        in.fill_bulk_transfer(deviceHandle, inEndpoint, nullptr, inSize,
+                              _transferCallback, this, 60000);
+
+        t->buffer = deviceHandle.alloc(1);
+
+        if(dmaBufferMode = (t->buffer != nullptr))
+        {
+            t = in;
+
+            t->buffer = deviceHandle.alloc(inSize);
+
+        }
+        else
+        {
+            t->buffer = (unsigned char*) malloc(1);
+
+            t = in;
+
+            t->buffer = (unsigned char*) malloc(inSize);
+        }
+
+        // kick off listening
+        libusb_error error = in.submit();
+
+        if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
+    }
 }
 
 }}

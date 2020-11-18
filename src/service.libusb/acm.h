@@ -59,6 +59,8 @@ class AcmLibUsb : public LibUsbBidirectionalDeviceBase
 {
     typedef LibUsbBidirectionalDeviceBase base_type;
 
+    void transferCallbackControl(libusb_transfer* transfer);
+    void transferCallbackBulk(libusb_transfer* transfer);
     void transferCallback(libusb_transfer* transfer);
 
     static void _transferCallback(libusb_transfer* transfer);
@@ -66,56 +68,11 @@ class AcmLibUsb : public LibUsbBidirectionalDeviceBase
     bool dmaBufferMode;
 
 public:
-    AcmLibUsb(libusb::DeviceHandle deviceHandle) :
-        base_type(deviceHandle)
-    {
-        libusb_transfer* t = out;
-
-        // FIX: Hardcoded for CP210x
-        uint8_t inEndpoint = 0x82;
-        uint8_t outEndpoint = 0x01;
-
-        // DEBT: only invalid in unit test scenarios
-        if(deviceHandle.valid())
-        {
-            // TODO: Optimization/experimentation - see if we can have a "large" and "small"
-            // transfer block greater than 1 character
-
-            // set up bulk transfers for in and out.  Leaving buffer as null as we
-            // play some games to assign that manually below
-            out.fill_bulk_transfer(deviceHandle, outEndpoint, nullptr, 1,
-                                   _transferCallback, this, 1000);
-
-            in.fill_bulk_transfer(deviceHandle, inEndpoint, nullptr, 1,
-                                  _transferCallback, this, 60000);
-
-            t->buffer = deviceHandle.alloc(1);
-
-            if(dmaBufferMode = (t->buffer != nullptr))
-            {
-                t = in;
-
-                t->buffer = deviceHandle.alloc(1);
-
-            }
-            else
-            {
-                t->buffer = (unsigned char*) malloc(1);
-
-                t = in;
-
-                t->buffer = (unsigned char*) malloc(1);
-            }
-
-            // kick off listening
-            libusb_error error = in.submit();
-
-            if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
-        }
-    }
-
+    AcmLibUsb(libusb::DeviceHandle deviceHandle);
     ~AcmLibUsb()
     {
+        uint16_t inSize = 64;
+
         in.cancel();
         out.cancel();
 
@@ -129,7 +86,7 @@ public:
 
                 t = in;
 
-                deviceHandle.free(t->buffer, 1);
+                deviceHandle.free(t->buffer, inSize);
             }
             else
             {

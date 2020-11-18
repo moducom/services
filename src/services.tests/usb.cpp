@@ -46,19 +46,22 @@ TEST_CASE("usb")
 
             dh.claim_interface(interface_number);
 
-            AcmLibUsb acm1(dh);
-
-            acm1.setLineCoding(115200);
-
-            // .run waits for 5s each time
-            for(int counter = 60 / 5; counter--;)
+            // so that AcmLibUsb spins down before dh.close() is called
             {
-                libusb.run();
-                std::this_thread::sleep_for(1s);
-            }
+                AcmLibUsb acm1(dh);
 
-            dh.release(interface_number);
-            libusb_attach_kernel_driver(dh, interface_number);
+                acm1.setLineCoding(115200);
+
+                // .run waits for 5s each time
+                for (int counter = 20 / 5; counter--;)
+                {
+                    libusb.run();
+                    std::this_thread::sleep_for(1s);
+                }
+
+                dh.release(interface_number);
+                libusb_attach_kernel_driver(dh, interface_number);
+            }
 
             dh.close();
         }
