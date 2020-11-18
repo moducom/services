@@ -12,7 +12,8 @@ conan_basic_setup(TARGETS KEEP_RPATHS)
 find_package(Threads REQUIRED)
 
 add_library(${PROJECT_NAME}
-        usb.cpp usb.h)
+        usb.cpp usb.h
+        wrapper.h)
 
 # DEBT: So damn sloppy
 target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
