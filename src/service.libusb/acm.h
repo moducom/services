@@ -58,34 +58,77 @@ class AcmLibUsb : public LibUsbBidirectionalDeviceBase
 
     static void _transferCallback(libusb_transfer* transfer);
 
+    bool dmaBufferMode;
+
 public:
     AcmLibUsb(libusb::DeviceHandle deviceHandle) :
         base_type(deviceHandle)
     {
         libusb_transfer* t = out;
 
-        // aborting because no valid deviceHandle yet
-        return;
+        uint8_t inEndpoint = 0x81;
+        uint8_t outEndpoint = 0x01;
 
-        t->buffer = deviceHandle.alloc(1);
+        // DEBT: only invalid in unit test scenarios
+        if(deviceHandle.valid())
+        {
+            // TODO: Optimization/experimentation - see if we can have a "large" and "small"
+            // transfer block greater than 1 character
 
-        t = in;
+            // set up bulk transfers for in and out.  Leaving buffer as null as we
+            // play some games to assign that manually below
+            out.fill_bulk_transfer(deviceHandle, outEndpoint, nullptr, 1,
+                                   _transferCallback, this, 1000);
 
-        t->buffer = deviceHandle.alloc(1);
+            in.fill_bulk_transfer(deviceHandle, inEndpoint, nullptr, 1,
+                                  _transferCallback, this, 60000);
+
+            t->buffer = deviceHandle.alloc(1);
+
+            if(dmaBufferMode = (t->buffer != nullptr))
+            {
+                t = in;
+
+                t->buffer = deviceHandle.alloc(1);
+
+            }
+            else
+            {
+                t->buffer = (unsigned char*) malloc(1);
+
+                t = in;
+
+                t->buffer = (unsigned char*) malloc(1);
+            }
+        }
     }
 
     ~AcmLibUsb()
     {
+        in.cancel();
+        out.cancel();
+
         libusb_transfer* t = out;
 
-        // aborting because no valid deviceHandle yet
-        return;
+        if(deviceHandle.valid())
+        {
+            if(dmaBufferMode)
+            {
+                deviceHandle.free(t->buffer, 1);
 
-        deviceHandle.free(t->buffer, 1);
+                t = in;
 
-        t = in;
+                deviceHandle.free(t->buffer, 1);
+            }
+            else
+            {
+                free(t->buffer);
 
-        deviceHandle.free(t->buffer, 1);
+                t = in;
+
+                free(t->buffer);
+            }
+        }
     }
 
     void setLineCoding(uint32_t bps,
@@ -114,7 +157,16 @@ public:
 
     void sendCharacter(char c)
     {
+        libusb_transfer* t = out;
 
+        if(t->status != LIBUSB_TRANSFER_COMPLETED)
+        {
+            return;
+        }
+
+        *t->buffer = c;
+
+        out.submit();
     }
 };
 

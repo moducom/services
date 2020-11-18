@@ -88,6 +88,8 @@ public:
     DeviceHandle(DeviceHandle&&) = default;
     DeviceHandle(const DeviceHandle&) = default;
 
+    bool valid() const { return device_handle != nullptr; }
+
     libusb_device* device() const
     {
         return libusb_get_device(device_handle);

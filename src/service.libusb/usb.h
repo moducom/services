@@ -42,8 +42,6 @@ class LibUsb
     libusb::Context context;
     libusb_hotplug_callback_handle hotplug_callback_handle;
 
-    entt::registry registry;
-
     void add_device(libusb_device*);
     void remove_device(libusb_device*);
     void refresh_devices();
@@ -62,6 +60,9 @@ class LibUsb
 public:
     LibUsb();
     ~LibUsb();
+
+    // DEBT: Exposing this publicly seems not right somehow
+    entt::registry registry;
 
     // Set up to be run periodically on its own thread
     void run()
