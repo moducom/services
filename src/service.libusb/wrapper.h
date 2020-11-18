@@ -24,9 +24,15 @@ class Transfer
     libusb_transfer* const transfer;
 
 public:
-    Transfer(int iso_packets) : transfer(libusb_alloc_transfer(iso_packets))
+    Transfer(int iso_packets = 0) : transfer(libusb_alloc_transfer(iso_packets))
     {
 
+    }
+
+    Transfer(libusb_device_handle* dev_handle, int iso_packets = 0) :
+        transfer(libusb_alloc_transfer(iso_packets))
+    {
+        transfer->dev_handle = dev_handle;
     }
 
     ~Transfer()
@@ -42,6 +48,14 @@ public:
     libusb_error cancel()
     {
         return (libusb_error) libusb_cancel_transfer(transfer);
+    }
+
+    void fill_bulk_transfer(libusb_device_handle* dev_handle, unsigned char endpoint,
+                            unsigned char* buffer, int length, libusb_transfer_cb_fn callback,
+                            void* user_data, unsigned timeout)
+    {
+        libusb_fill_bulk_transfer(transfer, dev_handle, endpoint, buffer,
+                                  length, callback, user_data, timeout);
     }
 };
 
@@ -176,6 +190,37 @@ public:
     {
         return DeviceHandle::open(device);
     }
+};
+
+
+class Context
+{
+    libusb_context* context;
+
+public:
+    void init()
+    {
+        auto error = (libusb_error)libusb_init(&context);
+
+        if(error) throw libusb::Exception(error);
+    }
+
+    void exit()
+    {
+        libusb_exit(context);
+    }
+
+    void handle_events()
+    {
+        libusb_handle_events(context);
+    }
+
+    void handle_events(timeval* tv, int* completed = nullptr)
+    {
+        libusb_handle_events_timeout_completed(context, tv, completed);
+    }
+
+    operator libusb_context*() const { return context; }
 };
 
 }}

@@ -99,9 +99,7 @@ void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
 
 LibUsb::LibUsb()
 {
-    auto error = (libusb_error)libusb_init(&context);
-
-    if(error) throw libusb::Exception(error);
+    context.init();
 
     // TOOD: Need to populate out into registry rather than hold on to device_list
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
@@ -132,7 +130,7 @@ LibUsb::LibUsb()
 LibUsb::~LibUsb()
 {
     libusb_hotplug_deregister_callback(context, hotplug_callback_handle);
-    libusb_exit(context);
+    context.exit();
 }
 
 }}

@@ -39,7 +39,7 @@ namespace services {
 
 class LibUsb
 {
-    libusb_context* context;
+    libusb::Context context;
     libusb_hotplug_callback_handle hotplug_callback_handle;
 
     entt::registry registry;
@@ -62,6 +62,17 @@ class LibUsb
 public:
     LibUsb();
     ~LibUsb();
+
+    // Set up to be run periodically on its own thread
+    void run()
+    {
+        timeval tv;
+
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
+
+        context.handle_events(&tv);
+    }
 };
 
 
