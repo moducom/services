@@ -69,35 +69,7 @@ class AcmLibUsb : public LibUsbBidirectionalDeviceBase
 
 public:
     AcmLibUsb(libusb::DeviceHandle deviceHandle);
-    ~AcmLibUsb()
-    {
-        uint16_t inSize = 64;
-
-        in.cancel();
-        out.cancel();
-
-        libusb_transfer* t = out;
-
-        if(deviceHandle.valid())
-        {
-            if(dmaBufferMode)
-            {
-                deviceHandle.free(t->buffer, 1);
-
-                t = in;
-
-                deviceHandle.free(t->buffer, inSize);
-            }
-            else
-            {
-                free(t->buffer);
-
-                t = in;
-
-                free(t->buffer);
-            }
-        }
-    }
+    ~AcmLibUsb();
 
     void setLineCoding(uint32_t bps,
                        uint8_t bCharFormat = 0,

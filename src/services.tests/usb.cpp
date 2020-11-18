@@ -44,8 +44,6 @@ TEST_CASE("usb")
             if(dh.kernel_driver_active(interface_number))
                 dh.detach_kernel_driver(interface_number);
 
-            dh.claim_interface(interface_number);
-
             // so that AcmLibUsb spins down before dh.close() is called
             {
                 AcmLibUsb acm1(dh);
@@ -58,12 +56,12 @@ TEST_CASE("usb")
                     libusb.run();
                     std::this_thread::sleep_for(1s);
                 }
-
-                dh.release(interface_number);
-                libusb_attach_kernel_driver(dh, interface_number);
             }
 
             dh.close();
+
+            // DEBT: They tell us this will return unsupported on windows, so beware
+            libusb_attach_kernel_driver(dh, interface_number);
         }
 
         AcmLibUsb acm(deviceHandle);
