@@ -57,6 +57,14 @@ public:
         libusb_fill_bulk_transfer(transfer, dev_handle, endpoint, buffer,
                                   length, callback, user_data, timeout);
     }
+
+
+    void fill_control_transfer(libusb_device_handle* dev_handle,
+                               unsigned char* buffer, libusb_transfer_cb_fn callback,
+                               void* user_data, unsigned timeout)
+    {
+        libusb_fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, timeout);
+    }
 };
 
 
@@ -77,6 +85,11 @@ public:
     libusb_device* device() const
     {
         return libusb_get_device(device_handle);
+    }
+
+    operator libusb_device_handle* const() const
+    {
+        return device_handle;
     }
 
     //  libusb_open() adds another reference which is later destroyed by libusb_close().

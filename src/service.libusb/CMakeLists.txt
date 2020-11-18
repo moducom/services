@@ -14,6 +14,7 @@ conan_basic_setup(TARGETS KEEP_RPATHS)
 find_package(Threads REQUIRED)
 
 add_library(${PROJECT_NAME}
+        acm.cpp acm.h
         usb.cpp usb.h
         wrapper.h)
 
