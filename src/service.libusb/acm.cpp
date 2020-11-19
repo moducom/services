@@ -6,11 +6,11 @@ void AcmLibUsb::transferCallbackBulk(libusb_transfer* transfer)
 {
     int actual_length = transfer->actual_length;
 
-    // DEBT: Have to do this first because we only are using one buffer at the moment
-    sighTransferReceived.publish(transfer->buffer, actual_length);
-
     if(transfer == in)
     {
+        // DEBT: Have to do this first because we only are using one buffer at the moment
+        sighTransferReceived.publish(transfer->buffer, actual_length);
+
         in.submit();
     }
 }

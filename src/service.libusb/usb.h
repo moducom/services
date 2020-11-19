@@ -1,6 +1,7 @@
 #pragma once
 
 #include <services/services.h>
+#include <chrono>
 #include "wrapper.h"
 
 #include <entt/entity/registry.hpp>
@@ -65,14 +66,28 @@ public:
     entt::registry registry;
 
     // Set up to be run periodically on its own thread
-    void run()
+    void run(moducom::services::stop_token* stopToken = nullptr)
     {
         timeval tv;
 
-        tv.tv_sec = 5;
+        // pop out every second
+        tv.tv_sec = 1;
         tv.tv_usec = 0;
 
-        context.handle_events(&tv);
+        int completed;
+
+        std::chrono::steady_clock c;
+        auto timeout = std::chrono::seconds(5);
+
+        std::chrono::steady_clock::time_point start = c.now();
+
+        do
+        {
+            context.handle_events(&tv, &completed);
+        }
+        while(
+                !(stopToken != nullptr && stopToken->stop_requested()) &&
+                (c.now() - start) < timeout);
     }
 };
 

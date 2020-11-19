@@ -13,14 +13,14 @@ static std::future<void> async_result;
 
 void printer(const unsigned char* buffer, int length)
 {
-    // TODO: Copy buffer out and move on
+    auto s = std::make_unique<std::string>((const char*)buffer, length);
 
     // At least we get a pseudo-queue of one async process by doing this
-    async_result = std::async(std::launch::async, [&]()
+    async_result = std::async(std::launch::async, [](auto _s)
     {
-        // seeing odd numbers for length, may be a race condition
-        std::cout << "sz = " << length << std::endl;
-    });
+        std::cout << *_s.get();
+        //"sz = " << length << std::endl;
+    }, std::move(s));
 }
 
 TEST_CASE("usb")
@@ -69,10 +69,9 @@ TEST_CASE("usb")
                 acm1.sinkTransferReceived.connect<printer>();
 
                 // .run waits for 5s each time
-                for (int counter = 60 / 5; counter--;)
+                for (int counter = 30 / 5; counter--;)
                 {
                     libusb.run();
-                    std::this_thread::sleep_for(1s);
                 }
             }
 

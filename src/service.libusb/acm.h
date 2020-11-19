@@ -34,7 +34,7 @@ struct
 class LibUsbBidirectionalDeviceBase
 {
 protected:
-    entt::sigh<void (unsigned char*, int)> sighTransferReceived;
+    entt::sigh<void (const unsigned char*, int)> sighTransferReceived;
 
     libusb::DeviceHandle deviceHandle;
 
@@ -42,7 +42,7 @@ protected:
     libusb::Transfer out;
     libusb::Transfer control;
 public:
-    entt::sink<void (unsigned char*, int)> sinkTransferReceived;
+    entt::sink<void (const unsigned char*, int)> sinkTransferReceived;
 
     LibUsbBidirectionalDeviceBase(libusb::DeviceHandle deviceHandle) :
         deviceHandle(deviceHandle),

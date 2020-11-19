@@ -254,14 +254,47 @@ public:
         libusb_exit(context);
     }
 
+    bool event_handling_ok()
+    {
+        int status = libusb_event_handling_ok(context);
+
+        if(status == 1) return true;
+        else if(status == 0) return false;
+        else throw libusb::Exception((libusb_error)status);
+    }
+
+    bool event_handler_active()
+    {
+        int status = libusb_event_handler_active(context);
+
+        if(status == 1) return true;
+        else if(status == 0) return false;
+        else throw libusb::Exception((libusb_error)status);
+    }
+
+    void lock_events()
+    {
+        libusb_lock_events(context);
+    }
+
+    void unlock_events()
+    {
+        libusb_unlock_events(context);
+    }
+
     void handle_events()
     {
-        libusb_handle_events(context);
+        auto status = (libusb_error) libusb_handle_events(context);
+
+        if(status != LIBUSB_SUCCESS) throw libusb::Exception(status);
     }
 
     void handle_events(timeval* tv, int* completed = nullptr)
     {
-        libusb_handle_events_timeout_completed(context, tv, completed);
+        auto status = (libusb_error)
+                libusb_handle_events_timeout_completed(context, tv, completed);
+
+        if(status != LIBUSB_SUCCESS) throw libusb::Exception(status);
     }
 
     operator libusb_context*() const { return context; }
