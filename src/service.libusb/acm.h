@@ -35,7 +35,52 @@ class LibUsbTransferIn
 {
     libusb::Transfer in;
 
+    entt::sigh<void (libusb::Buffer)> sighTransferReceived;
+
+    void transferCallback(libusb_transfer* transfer);
+    static void _transferCallback(libusb_transfer* transfer);
+
+    bool dmaBufferMode;
+
 public:
+    entt::sink<void (libusb::Buffer)> sinkTransferReceived;
+
+    LibUsbTransferIn(libusb::DeviceHandle deviceHandle, uint8_t endpoint, int size) :
+        sinkTransferReceived{sighTransferReceived}
+    {
+        in.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
+                              _transferCallback, this, 0);
+    }
+
+    ///
+    /// \return true if in DMA mode, false otherwise
+    bool start()
+    {
+        libusb_transfer* t = in;
+        t->buffer = in.device_handle().alloc(in.length());
+
+        dmaBufferMode = t->buffer != nullptr;
+
+        if(!dmaBufferMode)
+            t->buffer = (unsigned char*) malloc(in.length());
+
+        in.submit();
+
+        return dmaBufferMode;
+    }
+
+
+    void stop()
+    {
+        libusb_transfer* t = in;
+        in.cancel();
+
+        // DEBT: Not MT safe
+        if(dmaBufferMode)
+            in.device_handle().free(t->buffer, in.length());
+        else
+            free(t->buffer);
+    }
 };
 
 class LibUsbBidirectionalDeviceBase

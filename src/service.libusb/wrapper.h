@@ -27,20 +27,15 @@ struct Buffer
 };
 
 // only wrapper class which auto allocs/frees itself
-class Transfer
+class TransferBase
 {
+protected:
     libusb_transfer* const transfer;
 
 public:
-    Transfer(int iso_packets = 0) : transfer(libusb_alloc_transfer(iso_packets))
+    TransferBase(int iso_packets = 0) : transfer(libusb_alloc_transfer(iso_packets))
     {
 
-    }
-
-    Transfer(libusb_device_handle* dev_handle, int iso_packets = 0) :
-        transfer(libusb_alloc_transfer(iso_packets))
-    {
-        transfer->dev_handle = dev_handle;
     }
 
     operator libusb_transfer* const () const
@@ -48,10 +43,12 @@ public:
         return transfer;
     }
 
-    ~Transfer()
+    ~TransferBase()
     {
         libusb_free_transfer(transfer);
     }
+
+    int length() const { return transfer->length; }
 
     libusb_error submit()
     {
@@ -305,6 +302,21 @@ public:
     }
 
     operator libusb_context*() const { return context; }
+};
+
+
+class Transfer : public TransferBase
+{
+public:
+    Transfer(int iso_packets = 0) : TransferBase(iso_packets)
+    {
+
+    }
+
+    DeviceHandle device_handle() const
+    {
+        return transfer->dev_handle;
+    }
 };
 
 }}

@@ -162,4 +162,22 @@ AcmLibUsb::~AcmLibUsb()
     }
 }
 
+inline void LibUsbTransferIn::transferCallback(libusb_transfer* transfer)
+{
+    sighTransferReceived.publish(libusb::Buffer{
+            transfer->buffer,
+            transfer->actual_length});
+
+    in.submit();
+}
+
+
+void LibUsbTransferIn::_transferCallback(libusb_transfer* transfer)
+{
+    // NOTE: See comment in AcmLibUsb
+    if(transfer->status == LIBUSB_TRANSFER_CANCELLED)   return;
+
+    ((LibUsbTransferIn*)transfer->user_data)->transferCallback(transfer);
+}
+
 }}
