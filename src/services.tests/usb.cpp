@@ -11,14 +11,15 @@ constexpr uint16_t PID_CP210x = 0xea60;
 
 static std::future<void> async_result;
 
-void printer(const unsigned char* buffer, int length)
+// since this is called on the USB event "thread", we need to get in and out of here asap
+void printer(moducom::libusb::Buffer buffer)
 {
-    auto s = std::make_unique<std::string>((const char*)buffer, length);
+    auto s = std::make_unique<std::string>((const char*)buffer.buffer, buffer.length);
 
     // At least we get a pseudo-queue of one async process by doing this
     async_result = std::async(std::launch::async, [](auto _s)
     {
-        std::cout << *_s.get();
+        std::cout << *_s;
         //"sz = " << length << std::endl;
     }, std::move(s));
 }
@@ -69,10 +70,8 @@ TEST_CASE("usb")
                 acm1.sinkTransferReceived.connect<printer>();
 
                 // .run waits for 5s each time
-                for (int counter = 30 / 5; counter--;)
-                {
-                    libusb.run();
-                }
+                libusb.run();
+                libusb.run();
             }
 
             dh.close();

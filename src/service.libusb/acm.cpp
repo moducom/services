@@ -4,12 +4,12 @@ namespace moducom { namespace services {
 
 void AcmLibUsb::transferCallbackBulk(libusb_transfer* transfer)
 {
-    int actual_length = transfer->actual_length;
-
     if(transfer == in)
     {
         // DEBT: Have to do this first because we only are using one buffer at the moment
-        sighTransferReceived.publish(transfer->buffer, actual_length);
+        sighTransferReceived.publish(libusb::Buffer{
+            transfer->buffer,
+            transfer->actual_length});
 
         in.submit();
     }
@@ -38,6 +38,8 @@ inline void AcmLibUsb::transferCallback(libusb_transfer* transfer)
     if(transfer->status != LIBUSB_TRANSFER_COMPLETED)
     {
         // TODO: Better error handling
+        // NOTE: In transfer doesn't have time outs at the moment, so we don't
+        // expect to get here
         if(transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
         {
             // We expect input to timeout frequently as we wait for something to appear,

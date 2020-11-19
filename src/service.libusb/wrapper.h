@@ -19,6 +19,13 @@ public:
     }
 };
 
+// We'd use span, but that's only available in C++20
+struct Buffer
+{
+    unsigned char* buffer;
+    int length;
+};
+
 // only wrapper class which auto allocs/frees itself
 class Transfer
 {

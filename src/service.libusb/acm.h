@@ -31,10 +31,17 @@ struct
     uint8_t bDataBits;
 };
 
+class LibUsbTransferIn
+{
+    libusb::Transfer in;
+
+public:
+};
+
 class LibUsbBidirectionalDeviceBase
 {
 protected:
-    entt::sigh<void (const unsigned char*, int)> sighTransferReceived;
+    entt::sigh<void (libusb::Buffer)> sighTransferReceived;
 
     libusb::DeviceHandle deviceHandle;
 
@@ -42,7 +49,7 @@ protected:
     libusb::Transfer out;
     libusb::Transfer control;
 public:
-    entt::sink<void (const unsigned char*, int)> sinkTransferReceived;
+    entt::sink<void (libusb::Buffer)> sinkTransferReceived;
 
     LibUsbBidirectionalDeviceBase(libusb::DeviceHandle deviceHandle) :
         deviceHandle(deviceHandle),
