@@ -9,6 +9,20 @@ using namespace moducom::services;
 constexpr uint16_t VID_CP210x = 0x10c4;
 constexpr uint16_t PID_CP210x = 0xea60;
 
+static std::future<void> async_result;
+
+void printer(const unsigned char* buffer, int length)
+{
+    // TODO: Copy buffer out and move on
+
+    // At least we get a pseudo-queue of one async process by doing this
+    async_result = std::async(std::launch::async, [&]()
+    {
+        // seeing odd numbers for length, may be a race condition
+        std::cout << "sz = " << length << std::endl;
+    });
+}
+
 TEST_CASE("usb")
 {
     using namespace std::chrono_literals;
@@ -51,6 +65,8 @@ TEST_CASE("usb")
                 AcmLibUsb acm1(dh, inEndpoint, outEndpoint);
 
                 acm1.setLineCoding(115200);
+
+                acm1.sinkTransferReceived.connect<printer>();
 
                 // .run waits for 5s each time
                 for (int counter = 60 / 5; counter--;)

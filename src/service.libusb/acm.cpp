@@ -4,10 +4,10 @@ namespace moducom { namespace services {
 
 void AcmLibUsb::transferCallbackBulk(libusb_transfer* transfer)
 {
-    // DEBT: Have to do this first because we only are using one buffer at the moment
-    sighTransferReceived.publish(transfer->buffer, transfer->actual_length);
+    int actual_length = transfer->actual_length;
 
-    std::string test((char*)transfer->buffer);
+    // DEBT: Have to do this first because we only are using one buffer at the moment
+    sighTransferReceived.publish(transfer->buffer, actual_length);
 
     if(transfer == in)
     {
@@ -98,7 +98,7 @@ AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint
                                _transferCallback, this, 1000);
 
         in.fill_bulk_transfer(deviceHandle, inEndpoint, nullptr, inSize,
-                              _transferCallback, this, 60000);
+                              _transferCallback, this, 0);
 
         libusb_transfer* t = out;
 
@@ -109,7 +109,6 @@ AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint
             t = in;
 
             t->buffer = deviceHandle.alloc(inSize);
-
         }
         else
         {
