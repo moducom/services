@@ -26,6 +26,8 @@ void printer(moducom::libusb::Buffer buffer)
 
 TEST_CASE("usb")
 {
+    entt::registry registry;
+    agents::EnttHelper eh(registry, registry.create());
     using namespace std::chrono_literals;
 
     LibUsb libusb;

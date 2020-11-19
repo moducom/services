@@ -1,6 +1,8 @@
 #pragma once
 
 #include "usb.h"
+#include <services/service.hpp>
+#include <services/agents.hpp>
 
 // [1] See "USB Class Definitions for Communications Devices" v1.1 (1999)
 // https://cscott.net/usb_dev/data/devclass/usbcdc11.pdf
@@ -31,13 +33,16 @@ struct
     uint8_t bDataBits;
 };
 
-class LibUsbTransferIn
+class LibUsbTransferIn : public agents::Agent
 {
+    typedef agents::Agent base_type;
+
     libusb::Transfer in;
 
     entt::sigh<void (libusb::Buffer)> sighTransferReceived;
 
-    void transferCallback(libusb_transfer* transfer);
+    void transferCallbackBulk(libusb_transfer* transfer);
+    void transferCallbackCancel(libusb_transfer* transfer);
     static void _transferCallback(libusb_transfer* transfer);
 
     bool dmaBufferMode;
@@ -45,7 +50,10 @@ class LibUsbTransferIn
 public:
     entt::sink<void (libusb::Buffer)> sinkTransferReceived;
 
-    LibUsbTransferIn(libusb::DeviceHandle deviceHandle, uint8_t endpoint, int size) :
+    LibUsbTransferIn(agents::EnttHelper eh,
+                     libusb::DeviceHandle deviceHandle,
+                     uint8_t endpoint, int size) :
+        base_type(eh),
         sinkTransferReceived{sighTransferReceived}
     {
         in.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
@@ -56,6 +64,7 @@ public:
     /// \return true if in DMA mode, false otherwise
     bool start()
     {
+        status(Status::Starting);
         libusb_transfer* t = in;
         t->buffer = in.device_handle().alloc(in.length());
 
@@ -65,6 +74,8 @@ public:
             t->buffer = (unsigned char*) malloc(in.length());
 
         in.submit();
+        status(Status::Started);
+        status(Status::Running);
 
         return dmaBufferMode;
     }
@@ -72,14 +83,9 @@ public:
 
     void stop()
     {
+        status(Status::Stopping);
         libusb_transfer* t = in;
         in.cancel();
-
-        // DEBT: Not MT safe
-        if(dmaBufferMode)
-            in.device_handle().free(t->buffer, in.length());
-        else
-            free(t->buffer);
     }
 };
 
