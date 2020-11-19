@@ -111,20 +111,7 @@ public:
 
     void close()
     {
-        // FIX: Seems to lock up
         libusb_close(device_handle);
-    }
-
-    void claim(int interface_number)
-    {
-        libusb_claim_interface(device_handle, interface_number);
-    }
-
-    void release(int interface_number)
-    {
-        auto result = (libusb_error)libusb_release_interface(device_handle, interface_number);
-
-        if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
     void alloc_streams(uint32_t num_streams, unsigned char* endpoints, int num_endpoints)
@@ -199,6 +186,11 @@ public:
         auto result = (libusb_error) libusb_detach_kernel_driver(device_handle, interface_number);
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
+    libusb_error set_auto_detach_kernel_driver(bool enable)
+    {
+        return (libusb_error) libusb_set_auto_detach_kernel_driver(device_handle, enable);
     }
 
     void claim_interface(int interface_number)

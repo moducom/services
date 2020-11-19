@@ -66,9 +66,11 @@ class AcmLibUsb : public LibUsbBidirectionalDeviceBase
     static void _transferCallback(libusb_transfer* transfer);
 
     bool dmaBufferMode;
+    int interfaceNumber;
 
 public:
-    AcmLibUsb(libusb::DeviceHandle deviceHandle);
+    AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint8_t outEndpoint,
+              int interfaceNumber = 0);
     ~AcmLibUsb();
 
     void setLineCoding(uint32_t bps,

@@ -76,21 +76,18 @@ void AcmLibUsb::_transferCallback(libusb_transfer* transfer)
 }
 
 
-AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle) :
-    base_type(deviceHandle)
+AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint8_t outEndpoint,
+                     int interfaceNumber) :
+    base_type(deviceHandle),
+    interfaceNumber(interfaceNumber)
 {
-    // FIX: Hardcoded for CP210x
-    uint8_t inEndpoint = 0x82;
-    uint8_t outEndpoint = 0x01;
-
     // DEBT: These need to be adjustable
     uint16_t inSize = 64;
-    int interface_number = 0;
 
     // DEBT: only invalid in unit test scenarios
     if(deviceHandle.valid())
     {
-        deviceHandle.claim_interface(interface_number);
+        deviceHandle.claim_interface(interfaceNumber);
 
         // TODO: Optimization/experimentation - see if we can have a "large" and "small"
         // transfer block greater than 1 character
@@ -137,7 +134,6 @@ AcmLibUsb::~AcmLibUsb()
     {
         // DEBT: These must be adjustable
         uint16_t inSize = 64;
-        int interface_number = 0;
 
         in.cancel();
         out.cancel();
@@ -161,7 +157,7 @@ AcmLibUsb::~AcmLibUsb()
             free(t->buffer);
         }
 
-        deviceHandle.release(interface_number);
+        deviceHandle.release_interface(interfaceNumber);
     }
 }
 

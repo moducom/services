@@ -39,19 +39,21 @@ TEST_CASE("usb")
             libusb_device* device = libusb.registry.get<libusb_device*>(*result);
             moducom::libusb::Device _device(device);
             moducom::libusb::DeviceHandle dh = _device.open();
-            constexpr int interface_number = 0;
 
-            if(dh.kernel_driver_active(interface_number))
-                dh.detach_kernel_driver(interface_number);
+            dh.set_auto_detach_kernel_driver(true);
 
             // so that AcmLibUsb spins down before dh.close() is called
             {
-                AcmLibUsb acm1(dh);
+                // Hardcoded for CP210x
+                constexpr uint8_t inEndpoint = 0x82;
+                constexpr uint8_t outEndpoint = 0x01;
+
+                AcmLibUsb acm1(dh, inEndpoint, outEndpoint);
 
                 acm1.setLineCoding(115200);
 
                 // .run waits for 5s each time
-                for (int counter = 20 / 5; counter--;)
+                for (int counter = 60 / 5; counter--;)
                 {
                     libusb.run();
                     std::this_thread::sleep_for(1s);
@@ -59,11 +61,8 @@ TEST_CASE("usb")
             }
 
             dh.close();
-
-            // DEBT: They tell us this will return unsupported on windows, so beware
-            libusb_attach_kernel_driver(dh, interface_number);
         }
 
-        AcmLibUsb acm(deviceHandle);
+        AcmLibUsb acm(deviceHandle, 0, 0);
     }
 }
