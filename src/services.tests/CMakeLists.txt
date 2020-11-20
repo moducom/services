@@ -7,9 +7,7 @@ include_directories(..)
 add_subdirectory(../services build)
 add_subdirectory(../service.libusb libusb)
 
-include(${CMAKE_SOURCE_DIR}/../../lib/conan/conanbuildinfo.cmake)
-conan_basic_setup(TARGETS)
-find_package(Threads REQUIRED)
+include(${CMAKE_SOURCE_DIR}/../services.cmake)
 
 add_executable(services_tests
         agents.cpp

@@ -9,9 +9,7 @@ endif()
 
 set(ROOT_DIR ${PROJECT_SOURCE_DIR}/..)
 
-include(${CMAKE_SOURCE_DIR}/../../lib/conan/conanbuildinfo.cmake)
-conan_basic_setup(TARGETS KEEP_RPATHS)
-find_package(Threads REQUIRED)
+include(${CMAKE_SOURCE_DIR}/../services.cmake)
 
 add_library(${PROJECT_NAME}
         acm.cpp acm.h

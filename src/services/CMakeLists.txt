@@ -3,9 +3,7 @@ project(services)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include(${CMAKE_SOURCE_DIR}/../../lib/conan/conanbuildinfo.cmake)
-conan_basic_setup(TARGETS KEEP_RPATHS)
-find_package(Threads REQUIRED)
+include(${CMAKE_SOURCE_DIR}/../services.cmake)
 
 add_library(${PROJECT_NAME}
         agents.hpp
