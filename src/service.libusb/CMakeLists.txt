@@ -3,11 +3,11 @@ project(service-libusb LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
+include(../services.cmake)
+
 if(NOT TARGET services)
     add_subdirectory(../services build)
 endif()
-
-include(../services.cmake)
 
 add_library(${PROJECT_NAME}
         acm.cpp acm.h
