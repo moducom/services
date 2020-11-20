@@ -11,6 +11,10 @@ constexpr uint16_t PID_CP210x = 0xea60;
 
 static std::future<void> async_result;
 
+// For the sake of running REAL unit tests vs abusing them as
+// experimentation and integration tests
+#define ENABLE_LIVE_USB_TEST 0
+
 // since this is called on the USB event "thread", we need to get in and out of here asap
 void printer(moducom::libusb::Buffer buffer)
 {
@@ -51,6 +55,7 @@ TEST_CASE("usb")
             return false;
         });
 
+#if ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
             libusb_device* device = libusb.registry.get<libusb_device*>(*result);
@@ -78,6 +83,7 @@ TEST_CASE("usb")
 
             dh.close();
         }
+#endif
 
         AcmLibUsb acm(deviceHandle, 0, 0);
     }
