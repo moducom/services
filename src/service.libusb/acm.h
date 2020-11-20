@@ -22,9 +22,11 @@ enum class AcmRequestType : uint8_t
     SET_CONTROL_LINE_STATE = 0x22
 };
 
+#pragma pack(push, 1)
+
 // [1] 6.2.13 Table 50
 struct
-    __attribute__ ((packed))
+    //__attribute__ ((packed))
     AcmLineCoding
 {
     uint32_t dwDTERate;
@@ -32,6 +34,8 @@ struct
     uint8_t bParityType;
     uint8_t bDataBits;
 };
+
+#pragma pack(pop)
 
 class LibUsbTransferIn : public agents::Agent
 {
