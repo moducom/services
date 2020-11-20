@@ -112,7 +112,7 @@ LibUsb::LibUsb()
                 LIBUSB_HOTPLUG_MATCH_ANY,
                 LIBUSB_HOTPLUG_MATCH_ANY,
                 LIBUSB_HOTPLUG_MATCH_ANY,
-                &hotplug_callback,
+                hotplug_callback,
                 this,
                 &hotplug_callback_handle
         );
