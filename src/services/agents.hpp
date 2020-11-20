@@ -578,12 +578,51 @@ public:
     }
 };
 
+// guidance from
+// https://stackoverflow.com/questions/22632236/how-is-possible-to-deduce-function-argument-type-in-c
+// https://stackoverflow.com/questions/29906242/c-deduce-member-function-parameters
+template <class F> struct ArgType;
+
+template <class C, class F> struct ClassArgType;
+
+template <class R, class T>
+struct ArgType<R(*)(T)>
+{
+    //typedef TArgs... type;
+    typedef std::tuple<T> tuple_type;
+};
+
+/*
+template <class C, class R, class T>
+struct ArgType<R(C::*)(T)>
+{
+    //typedef TArgs... type;
+    typedef std::tuple<T> tuple_type;
+}; */
+
+template <class C, class R, class ...TArgs>
+struct ArgType<R(C::*)(TArgs...)>
+{
+    //typedef TArgs... type;
+    typedef std::tuple<TArgs...> tuple_type;
+};
+
+
+/*
+template <class R, class ...TArgs>
+struct ArgType<R(*)(TArgs...)>
+{
+    //typedef TArgs... type;
+    typedef std::tuple<TArgs...> tuple_type;
+};*/
+
 }
 
 template <class TService, class ...TArgs>
 class AsyncEventQueue : public Base<TService>
 {
     typedef Base<TService> base_type;
+    typedef typename internal::ArgType<decltype(&TService::run)>::tuple_type event_args2;
     typedef std::tuple<TArgs...> event_args;
 
     struct Item

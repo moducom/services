@@ -99,4 +99,26 @@ TEST_CASE("misc")
             bq.emplace(1);
         }
     }
+    SECTION("internal")
+    {
+        SECTION("ArgType 1")
+        {
+            typedef agents::internal::ArgType<decltype(&Event1::run)> argtype;
+            typedef argtype::tuple_type test_type;
+
+            test_type tuple;
+
+            std::get<0>(tuple) = 1;
+        }
+        SECTION("ArgType 2")
+        {
+            agents::internal::ArgType<decltype(&Listener1::onStatusChanged)>::tuple_type tuple;
+
+            auto& item1 = std::get<0>(tuple);
+            auto& item2 = std::get<1>(tuple);
+
+            REQUIRE(item2 == Status::Unstarted);
+        }
+                //::tuple_type test;
+    }
 }
