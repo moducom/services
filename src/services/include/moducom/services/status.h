@@ -10,7 +10,7 @@ enum class Status
     Started,
     Running,
     Degraded,   ///< Partially running state
-    Waiting,    ///< Running, but waiting on a service-specific signal
+    Waiting,    ///< Running, but waiting on a services-specific signal
     Pausing,
     Paused,
     Stopping,

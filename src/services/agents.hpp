@@ -18,7 +18,7 @@
 #include <tuple>
 #include <utility>
 
-#include "status.h"
+#include <moducom/services/status.h>
 
 namespace moducom { namespace services { namespace agents {
 
@@ -255,7 +255,7 @@ public:
     template <class ...TArgs>
     void construct(TArgs&&... args)
     {
-        //new (&service()) service_type(std::forward<TArgs>(args)...);
+        //new (&services()) service_type(std::forward<TArgs>(args)...);
         ::new ((void*) ::std::addressof(raw)) contained_type(std::forward<TArgs>(args)...);
     }
 

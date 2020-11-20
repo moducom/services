@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stop_token.h"
+#include <moducom/stop_token.h>
 #include "services.h"
 
 #include <entt/signal/delegate.hpp>

@@ -7,8 +7,6 @@ if(NOT TARGET services)
     add_subdirectory(../services build)
 endif()
 
-set(ROOT_DIR ${PROJECT_SOURCE_DIR}/..)
-
 include(${CMAKE_SOURCE_DIR}/../services.cmake)
 
 add_library(${PROJECT_NAME}
@@ -19,5 +17,9 @@ add_library(${PROJECT_NAME}
 # DEBT: So damn sloppy
 #target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR})
+
+# Not sure why we have to specify this when it's PUBLIC in services' CMakeLists.txt
+# perhaps it is that we're not adding the target
+target_include_directories(${PROJECT_NAME} PUBLIC ../services/include)
 
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads CONAN_PKG::libusb)

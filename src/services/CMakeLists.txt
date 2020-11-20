@@ -3,14 +3,17 @@ project(services)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include(${CMAKE_SOURCE_DIR}/../services.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../services.cmake)
 
 add_library(${PROJECT_NAME}
         agents.hpp
         library.cpp library.h
         managers.hpp
         service.hpp services.h
-        semver.h
-        status.h
-        stop_token.h)
+
+        include/moducom/semver.h
+        include/moducom/services/status.h
+        include/moducom/stop_token.h)
+
+target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads)

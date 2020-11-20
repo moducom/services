@@ -1,11 +1,11 @@
 #pragma once
 
-#include "status.h"
-#include "semver.h"
+#include <moducom/services/status.h>
+#include <moducom/semver.h>
 
 #include <new>
 #include <string>
-#include "stop_token.h"
+#include <moducom/stop_token.h>
 
 namespace moducom { namespace services {
 

@@ -16,4 +16,5 @@ add_executable(services_tests
         services.cpp services.h
         usb.cpp
         )
+
 target_link_libraries(services_tests CONAN_PKG::entt CONAN_PKG::catch2 Threads::Threads service-libusb)
