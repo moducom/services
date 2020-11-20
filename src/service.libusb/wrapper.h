@@ -1,6 +1,20 @@
 #pragma once
 
+#include <moducom/portable_endian.h>
+
+#ifdef __WINDOWS__
+#pragma warning(push)
+// Non-standard extensions used for the 'zero buffer' approach, but I am 98% sure MSVC handles that
+// OK
+#pragma warning(disable: 4200)
+#endif
+
 #include <libusb-1.0/libusb.h>
+
+#ifdef __WINDOWS__
+#pragma warning(pop)
+#endif
+
 #include <stdexcept>
 
 // raw libusb C++ wrappers, nothing fancy here
@@ -175,7 +189,7 @@ public:
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
-    void get_string_descriptor(uint8_t desc_index, uint16_t langid, unsigned char* data, int length)
+    void get_string_descriptor(uint8_t desc_index, uint8_t langid, unsigned char* data, int length)
     {
         auto result = (libusb_error) libusb_get_string_descriptor(device_handle, langid, desc_index, data, length);
 

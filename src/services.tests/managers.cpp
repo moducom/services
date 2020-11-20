@@ -8,6 +8,8 @@
 
 using namespace moducom::services;
 
+#undef min
+
 typedef moducom::services::agents::Agent agent_type;
 
 // for scenarios where std::chrono::duration is a little more than we want
