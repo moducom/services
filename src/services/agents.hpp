@@ -605,6 +605,17 @@ struct ArgType<R(C::*)(TArgs...)>
 {
     //typedef TArgs... type;
     typedef std::tuple<TArgs...> tuple_type;
+
+    template <typename F>
+    static R invoke(F&& f, const tuple_type& tuple)
+    {
+        // DEBT: TArgs... should be a ref, const ref or similar
+        std::apply([&](TArgs... args)
+                   {
+                       f(std::forward<TArgs>(args)...);
+                   }, tuple);
+
+    }
 };
 
 

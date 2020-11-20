@@ -18,6 +18,11 @@ static void async1()
     std::clog << "hi2u from async1" << std::endl;
 }
 
+static void requireSeven(int value)
+{
+    REQUIRE(value == 7);
+}
+
 TEST_CASE("misc")
 {
     entt::registry registry;
@@ -108,7 +113,9 @@ TEST_CASE("misc")
 
             test_type tuple;
 
-            std::get<0>(tuple) = 1;
+            std::get<0>(tuple) = 7;
+
+            argtype::invoke(requireSeven, tuple);
         }
         SECTION("ArgType 2")
         {
@@ -119,6 +126,5 @@ TEST_CASE("misc")
 
             REQUIRE(item2 == Status::Unstarted);
         }
-                //::tuple_type test;
     }
 }
