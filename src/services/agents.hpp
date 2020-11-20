@@ -618,12 +618,13 @@ struct ArgType<R(*)(TArgs...)>
 
 }
 
-template <class TService, class ...TArgs>
+template <class TService> //, class ...TArgs>
 class AsyncEventQueue : public Base<TService>
 {
     typedef Base<TService> base_type;
-    typedef typename internal::ArgType<decltype(&TService::run)>::tuple_type event_args2;
-    typedef std::tuple<TArgs...> event_args;
+    // NOTE: This deduction demands one and only one 'run' method be present
+    typedef typename internal::ArgType<decltype(&TService::run)>::tuple_type event_args;
+    //typedef std::tuple<TArgs...> event_args;
 
     struct Item
     {
@@ -672,7 +673,8 @@ class AsyncEventQueue : public Base<TService>
 
             if(item.stop_signal)    break;
 
-            std::apply([&](const TArgs&... args)
+            // DEBT: Don't like auto here, but getting tuple's TArgs is quite difficult
+            std::apply([&](const auto&... args)
             {
                 base_type::service().run(args...);
             }, item.args);
@@ -723,6 +725,10 @@ public:
         workerFuture.wait();
     }
 
+    // DEBT: Need to mate this to tuple rather than a new ...TArgs,
+    // though indirectly it is since the queue.emplace will fail compilation
+    // if things don't match
+    template <class ...TArgs>
     void run(TArgs&&...args)
     {
         queue.emplace(false, event_args(std::forward<TArgs>(args)...));
