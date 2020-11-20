@@ -7,7 +7,7 @@ if(NOT TARGET services)
     add_subdirectory(../services build)
 endif()
 
-include(${CMAKE_SOURCE_DIR}/../services.cmake)
+include(../services.cmake)
 
 add_library(${PROJECT_NAME}
         acm.cpp acm.h
