@@ -18,8 +18,8 @@ add_library(${PROJECT_NAME}
 #target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR})
 
-# Not sure why we have to specify this when it's PUBLIC in services' CMakeLists.txt
-# perhaps it is that we're not adding the target
-target_include_directories(${PROJECT_NAME} PUBLIC ../services/include)
-
-target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads CONAN_PKG::libusb)
+target_link_libraries(${PROJECT_NAME}
+        CONAN_PKG::entt CONAN_PKG::libusb
+        Threads::Threads
+        services
+        )

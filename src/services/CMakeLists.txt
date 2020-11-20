@@ -15,5 +15,5 @@ add_library(${PROJECT_NAME}
         include/moducom/services/status.h
         include/moducom/stop_token.h)
 
-target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads)
