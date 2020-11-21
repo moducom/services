@@ -4,6 +4,12 @@
 #include <chrono>
 #include "wrapper.h"
 
+#ifdef __GNUC__
+// to get at endian conversions.  For CLang and MSVC, endian conversions appear to be
+// ambiently available
+#include <arpa/inet.h>
+#endif
+
 #include <entt/entity/registry.hpp>
 
 namespace moducom {

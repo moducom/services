@@ -46,8 +46,8 @@ TEST_CASE("usb")
         {
             libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
 
-            if(deviceDescriptor.idVendor == htole16(VID_CP210x) &&
-                deviceDescriptor.idProduct == htole16(PID_CP210x))
+            if(deviceDescriptor.idVendor == htons(VID_CP210x) &&
+                deviceDescriptor.idProduct == htons(PID_CP210x))
             {
                 return true;
             }

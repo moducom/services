@@ -106,7 +106,7 @@ AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint
 
         t->buffer = deviceHandle.alloc(1);
 
-        if(dmaBufferMode = (t->buffer != nullptr))
+        if((dmaBufferMode = (t->buffer != nullptr)))
         {
             t = in;
 
