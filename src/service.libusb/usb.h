@@ -80,7 +80,9 @@ public:
         tv.tv_sec = 1;
         tv.tv_usec = 0;
 
-        int completed;
+        // NOTE: Needs to be initialized to 0, otherwise special skip
+        // behavior enacts
+        int completed = 0;
 
         std::chrono::steady_clock c;
         auto timeout = std::chrono::seconds(5);

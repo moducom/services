@@ -107,21 +107,18 @@ TEST_CASE("usb")
             dh.claim_interface(0);
 
             {
-                LibUsbTransfer in(eh, dh, CP210x::inEndpoint, 32);
+                // 0 = infinite timeout, so in other words, waits forever until we get full buffer
+                // frustratingly, this seems to lose stuff along the way though could just be
+                // artifact of our goofy semi-async printer debug method
+                LibUsbTransfer in(eh, dh, CP210x::inEndpoint, 32, 0);
 
                 //auto& sink = eh.get<entt::sink<void (moducom::libusb::Buffer)> >();
 
-                //in.sinkTransferCompleted.connect<printer>();
-
-                // FIX: Something very odd is going on.  If I place in.start() after
-                // sink.connect, we never get any callbacks from libusb.  Some kind of
-                // delay/extra activity seems to be required before libusb.run() actually
-                // kicks off the callbacks.  Baffled on this one.
-                in.start();
-
-                //std::this_thread::sleep_for(2s);
-
                 //sink.connect<printer>();
+
+                in.sinkTransferCompleted.connect<printer>();
+
+                in.start();
 
                 libusb.run();
                 libusb.run();
