@@ -223,6 +223,8 @@ class Device
 public:
     Device(libusb_device* device) : device(device) {}
 
+    operator libusb_device*() const { return device; }
+
     Device(Device&&) = default;
     Device(const Device&) = default;
 

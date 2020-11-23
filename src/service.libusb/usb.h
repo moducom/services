@@ -71,6 +71,16 @@ public:
     // DEBT: Exposing this publicly seems not right somehow
     entt::registry registry;
 
+    libusb::Device getDevice(entt::entity entity)
+    {
+        return registry.get<libusb_device*>(entity);
+    }
+
+    libusb::DeviceHandle openDeviceHandle(entt::entity entity)
+    {
+        return getDevice(entity).open();
+    }
+
     // Set up to be run periodically on its own thread
     void run(moducom::services::stop_token* stopToken = nullptr)
     {

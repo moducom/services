@@ -42,8 +42,6 @@ TEST_CASE("usb")
     using namespace std::chrono_literals;
 
     LibUsb libusb;
-    // DEBT: Gonna get limited mileage out of a null-initialized device handle
-    moducom::libusb::DeviceHandle deviceHandle(nullptr);
 
     auto desciptors = libusb.registry.view<libusb_device_descriptor>();
 
@@ -90,7 +88,9 @@ TEST_CASE("usb")
         }
 #endif
 
-        //AcmLibUsb acm(deviceHandle, 0, 0);
+        // DEBT: Gonna get limited mileage out of a null-initialized device handle
+        moducom::libusb::DeviceHandle deviceHandle(nullptr);
+        AcmLibUsb acm(deviceHandle, 0, 0);
     }
     SECTION("bulk")
     {
@@ -99,9 +99,7 @@ TEST_CASE("usb")
 #if ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
-            libusb_device* device = libusb.registry.get<libusb_device*>(*result);
-            moducom::libusb::Device _device(device);
-            moducom::libusb::DeviceHandle dh = _device.open();
+            moducom::libusb::DeviceHandle dh = libusb.openDeviceHandle(*result);
 
             dh.set_auto_detach_kernel_driver(true);
 
