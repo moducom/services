@@ -305,6 +305,11 @@ public:
         if(status != LIBUSB_SUCCESS) throw libusb::Exception(status);
     }
 
+    void hotplug_deregister_callback(libusb_hotplug_callback_handle callback_handle)
+    {
+        libusb_hotplug_deregister_callback(context, callback_handle);
+    }
+
     operator libusb_context*() const { return context; }
 };
 

@@ -19,6 +19,7 @@
 #include <utility>
 
 #include <moducom/services/status.h>
+#include "services.h"
 
 namespace moducom { namespace services { namespace agents {
 
@@ -208,6 +209,9 @@ class Aggregator :
         // and regular agent can both have dependencies
         public Depender
 {
+    // DEBT: Resolve this with depender's vector
+    entt::registry registry;
+
     void dependentStatus()
     {
 
@@ -231,6 +235,17 @@ public:
     void stop()
     {
         status(Status::Stopping);
+    }
+
+    template <class TService, class ...TArgs>
+    entt::entity createService(TArgs&&...args)
+    {
+        entt::entity entity = registry.create();
+
+        registry.emplace<Description>(entity, TService::description());
+        registry.emplace<std::unique_ptr<TService> >(entity, new TService(std::forward<TArgs>(args)...));
+
+        return entity;
     }
 };
 

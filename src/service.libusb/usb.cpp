@@ -97,13 +97,18 @@ void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
     }
 }
 
-LibUsb::LibUsb()
+// NOTE: may be phasing out this intensive use of registry awareness *inside* agents.  Not sure
+// yet
+static entt::registry dummyRegistry;
+
+LibUsb::LibUsb() :
+        base_type(agents::EnttHelper(dummyRegistry, dummyRegistry.create()))
 {
+    status(Status::Starting);
+
     context.init();
 
-    // TOOD: Need to populate out into registry rather than hold on to device_list
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
-    //if(false)
     {
         libusb_hotplug_register_callback(
                 context,
@@ -122,15 +127,18 @@ LibUsb::LibUsb()
         refresh_devices();
     }
 
-    //libusb_device_descriptor d;
-
-    //success = libusb_get_device_descriptor(device_list[0], &d);
+    // Hotplug is async, so started/running doesn't necessarily mean all the devices are there yet.
+    status(Status::Started);
+    status(Status::Running);
 }
 
 LibUsb::~LibUsb()
 {
-    libusb_hotplug_deregister_callback(context, hotplug_callback_handle);
+    if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
+        context.hotplug_deregister_callback(hotplug_callback_handle);
+
     context.exit();
+    status(Status::Stopped);
 }
 
 }}

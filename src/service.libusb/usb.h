@@ -3,6 +3,7 @@
 #include <services/services.h>
 #include <chrono>
 #include "wrapper.h"
+#include <services/agents.hpp>
 
 #ifdef __GNUC__
 // to get at endian conversions.  For CLang and MSVC, endian conversions appear to be
@@ -44,8 +45,10 @@ public:
 
 namespace services {
 
-class LibUsb
+class LibUsb : public agents::Agent
 {
+    typedef agents::Agent base_type;
+    
     libusb::Context context;
     libusb_hotplug_callback_handle hotplug_callback_handle;
 
@@ -67,6 +70,11 @@ class LibUsb
 public:
     LibUsb();
     ~LibUsb();
+
+    static Description description()
+    {
+        return Description("libusb", SemVer{0, 1, 0});
+    }
 
     // DEBT: Exposing this publicly seems not right somehow
     entt::registry registry;

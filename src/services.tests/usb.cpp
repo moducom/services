@@ -40,8 +40,16 @@ TEST_CASE("usb")
     entt::registry registry;
     agents::EnttHelper eh(registry, registry.create());
     using namespace std::chrono_literals;
+    agents::Aggregator services(eh);
 
     LibUsb libusb;
+
+    entt::entity libusb_entity = registry.create();
+
+    //services.createService<LibUsb>();
+
+    registry.emplace<moducom::services::Description>(libusb_entity, LibUsb::description());
+    registry.emplace<LibUsb*>(libusb_entity, &libusb);
 
     auto desciptors = libusb.registry.view<libusb_device_descriptor>();
 

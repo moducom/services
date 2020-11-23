@@ -20,23 +20,6 @@ class Manager
 };
 
 
-class ServiceBase
-{
-public:
-    enum class ThreadPreference
-    {
-        Default,
-        PreferCooperative,
-        PreferThreaded,
-        RequireThreaded
-    };
-
-    static constexpr ThreadPreference threadPreference()
-    {
-        return ThreadPreference::Default;
-    }
-};
-
 }}
 
 #include "managers.hpp"
