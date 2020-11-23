@@ -147,7 +147,7 @@ public:
         auto raw = (unsigned char*) malloc(sizeof(libusb_control_setup) + sizeof(AcmLineCoding));
         auto m = (AcmLineCoding*) (raw + sizeof(libusb_control_setup));
 
-        m->dwDTERate = htonl(bps);
+        m->dwDTERate = htole32(bps);
         m->bCharFormat = bCharFormat;
         m->bParityType = bParityType;
         m->bDataBits = bDataBits;

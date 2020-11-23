@@ -2,6 +2,7 @@
 
 #include <moducom/services/status.h>
 #include <moducom/semver.h>
+#include <moducom/portable_endian.h>
 
 #include <new>
 #include <string>

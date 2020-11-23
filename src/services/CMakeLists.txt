@@ -13,7 +13,7 @@ add_library(${PROJECT_NAME}
 
         include/moducom/semver.h
         include/moducom/services/status.h
-        include/moducom/stop_token.h)
+        include/moducom/stop_token.h include/moducom/portable_endian.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads)

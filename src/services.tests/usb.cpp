@@ -19,7 +19,7 @@ static std::future<void> async_result;
 
 // For the sake of running REAL unit tests vs abusing them as
 // experimentation and integration tests
-//#define ENABLE_LIVE_USB_TEST 1
+#define ENABLE_LIVE_USB_TEST 1
 
 // since this is called on the USB event "thread", we need to get in and out of here asap
 void printer(moducom::libusb::Buffer buffer)
@@ -50,8 +50,8 @@ TEST_CASE("usb")
     {
         libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
 
-        if(deviceDescriptor.idVendor == htons(CP210x::VID) &&
-           deviceDescriptor.idProduct == htons(CP210x::PID))
+        if(deviceDescriptor.idVendor == htole16(CP210x::VID) &&
+           deviceDescriptor.idProduct == htole16(CP210x::PID))
         {
             return true;
         }
