@@ -209,9 +209,6 @@ class Aggregator :
         // and regular agent can both have dependencies
         public Depender
 {
-    // DEBT: Resolve this with depender's vector
-    entt::registry registry;
-
     void dependentStatus()
     {
 
@@ -227,6 +224,10 @@ public:
         Agent(eh)
     {}
 
+    // DEBT: Resolve this with depender's vector
+    // DEBT: Exposing this as publis is a no-no
+    entt::registry registry;
+
     void start()
     {
         status(Status::Starting);
@@ -241,11 +242,22 @@ public:
     entt::entity createService(TArgs&&...args)
     {
         entt::entity entity = registry.create();
+        EnttHelper eh(registry, entity);
+        auto service = new TService(eh, std::forward<TArgs>(args)...);
 
         registry.emplace<Description>(entity, TService::description());
-        registry.emplace<std::unique_ptr<TService> >(entity, new TService(std::forward<TArgs>(args)...));
+        registry.emplace<std::unique_ptr<TService> >(entity, service);
+
+        // FIX: Experimental, having this and unique ptr at same time
+        registry.emplace<Agent*>(entity, service);
 
         return entity;
+    }
+
+    template <class TService>
+    TService& getService(entt::entity entity)
+    {
+        return *registry.get<std::unique_ptr<TService> >(entity).get();
     }
 };
 
@@ -302,6 +314,10 @@ public:
         return container_base::contained();
     }
 
+    static Description description()
+    {
+        return service_type::description();
+    }
 };
 
 template <class TService, ServiceBase::ThreadPreference>

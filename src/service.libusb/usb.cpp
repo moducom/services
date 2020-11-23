@@ -101,11 +101,8 @@ void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
 // yet
 static entt::registry dummyRegistry;
 
-LibUsb::LibUsb() :
-        base_type(agents::EnttHelper(dummyRegistry, dummyRegistry.create()))
+LibUsb::LibUsb()
 {
-    status(Status::Starting);
-
     context.init();
 
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
@@ -128,8 +125,6 @@ LibUsb::LibUsb() :
     }
 
     // Hotplug is async, so started/running doesn't necessarily mean all the devices are there yet.
-    status(Status::Started);
-    status(Status::Running);
 }
 
 LibUsb::~LibUsb()
@@ -138,7 +133,6 @@ LibUsb::~LibUsb()
         context.hotplug_deregister_callback(hotplug_callback_handle);
 
     context.exit();
-    status(Status::Stopped);
 }
 
 }}

@@ -45,10 +45,10 @@ public:
 
 namespace services {
 
-class LibUsb : public agents::Agent
+class LibUsb : public ServiceBase
 {
-    typedef agents::Agent base_type;
-    
+    typedef ServiceBase base_type;
+
     libusb::Context context;
     libusb_hotplug_callback_handle hotplug_callback_handle;
 
@@ -89,7 +89,9 @@ public:
         return getDevice(entity).open();
     }
 
-    // Set up to be run periodically on its own thread
+    // Set up to be run periodically on its own thread.
+    // This flavor blocks, future ones don't have to once you overcome the nuance of
+    // libusb's lock/unlock nonblocking thread stuff
     void run(moducom::services::stop_token* stopToken = nullptr)
     {
         timeval tv;

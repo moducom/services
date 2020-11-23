@@ -44,6 +44,8 @@ TEST_CASE("usb")
 
     LibUsb libusb;
 
+    typedef agents::Event<LibUsb> libusb_agent_type;
+
     entt::entity libusb_entity = registry.create();
 
     //services.createService<LibUsb>();
@@ -103,6 +105,9 @@ TEST_CASE("usb")
     SECTION("bulk")
     {
         using namespace std::chrono_literals;
+        entt::entity libusb_entity2 = services.createService<libusb_agent_type>();
+
+        auto& libusb2 = services.getService<libusb_agent_type>(libusb_entity2);
 
 #if ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
