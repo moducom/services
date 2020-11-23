@@ -89,6 +89,21 @@ public:
         return getDevice(entity).open();
     }
 
+    template <class F>
+    entt::entity findDevice(F&& f)
+    {
+        auto desciptors = registry.view<libusb_device_descriptor>();
+
+        auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](entt::entity entity)
+        {
+            const libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
+
+            return f(deviceDescriptor);
+        });
+
+        return result == std::end(desciptors) ? entt::null : *result;
+    }
+
     // Set up to be run periodically on its own thread.
     // This flavor blocks, future ones don't have to once you overcome the nuance of
     // libusb's lock/unlock nonblocking thread stuff

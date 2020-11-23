@@ -41,35 +41,35 @@ TEST_CASE("usb")
     agents::EnttHelper eh(registry, registry.create());
     using namespace std::chrono_literals;
     agents::Aggregator services(eh);
-
-    LibUsb libusb;
-
     typedef agents::Event<LibUsb> libusb_agent_type;
-
-    entt::entity libusb_entity = registry.create();
-
-    //services.createService<LibUsb>();
-
-    registry.emplace<moducom::services::Description>(libusb_entity, LibUsb::description());
-    registry.emplace<LibUsb*>(libusb_entity, &libusb);
-
-    auto desciptors = libusb.registry.view<libusb_device_descriptor>();
-
-    auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](auto& entity)
-    {
-        libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
-
-        if(deviceDescriptor.idVendor == htole16(CP210x::VID) &&
-           deviceDescriptor.idProduct == htole16(CP210x::PID))
-        {
-            return true;
-        }
-
-        return false;
-    });
 
     SECTION("acm")
     {
+        LibUsb libusb;
+
+        entt::entity libusb_entity = registry.create();
+
+        //services.createService<LibUsb>();
+
+        registry.emplace<moducom::services::Description>(libusb_entity, LibUsb::description());
+        registry.emplace<LibUsb*>(libusb_entity, &libusb);
+
+        auto desciptors = libusb.registry.view<libusb_device_descriptor>();
+
+        auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](auto& entity)
+        {
+            libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
+
+            if(deviceDescriptor.idVendor == htole16(CP210x::VID) &&
+               deviceDescriptor.idProduct == htole16(CP210x::PID))
+            {
+                return true;
+            }
+
+            return false;
+        });
+
+
 #if DISABLED_ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
@@ -109,10 +109,21 @@ TEST_CASE("usb")
 
         auto& libusb2 = services.getService<libusb_agent_type>(libusb_entity2);
 
-#if ENABLE_LIVE_USB_TEST
-        if(result != std::end(desciptors))
+        libusb2.construct();
+
+        auto& libusb = libusb2.service();
+
+        entt::entity deviceEntity = libusb.findDevice([](const libusb_device_descriptor& d)
         {
-            moducom::libusb::DeviceHandle dh = libusb.openDeviceHandle(*result);
+            return
+                d.idVendor == htole16(CP210x::VID) &&
+                d.idProduct == htole16(CP210x::PID);
+        });
+
+#if ENABLE_LIVE_USB_TEST
+        if(deviceEntity != entt::null)
+        {
+            moducom::libusb::DeviceHandle dh = libusb.openDeviceHandle(deviceEntity);
 
             dh.set_auto_detach_kernel_driver(true);
 
@@ -152,5 +163,7 @@ TEST_CASE("usb")
             dh.close();
         }
 #endif
+
+        libusb2.destruct();
     }
 }
