@@ -62,6 +62,8 @@ public:
     {
         in.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
                               _transferCallback, this, 0);
+        eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
+                                                               sinkTransferReceived);
     }
 
     ///

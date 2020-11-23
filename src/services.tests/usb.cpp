@@ -6,14 +6,20 @@
 
 using namespace moducom::services;
 
-constexpr uint16_t VID_CP210x = 0x10c4;
-constexpr uint16_t PID_CP210x = 0xea60;
+// In my case, for ESP32 CP2104
+struct CP210x
+{
+    static constexpr uint16_t VID = 0x10c4;
+    static constexpr uint16_t PID = 0xea60;
+    static constexpr uint8_t inEndpoint = 0x82;
+    static constexpr uint8_t outEndpoint = 0x01;
+};
 
 static std::future<void> async_result;
 
 // For the sake of running REAL unit tests vs abusing them as
 // experimentation and integration tests
-#define ENABLE_LIVE_USB_TEST 0
+//#define ENABLE_LIVE_USB_TEST 1
 
 // since this is called on the USB event "thread", we need to get in and out of here asap
 void printer(moducom::libusb::Buffer buffer)
@@ -38,23 +44,23 @@ TEST_CASE("usb")
     // DEBT: Gonna get limited mileage out of a null-initialized device handle
     moducom::libusb::DeviceHandle deviceHandle(nullptr);
 
+    auto desciptors = libusb.registry.view<libusb_device_descriptor>();
+
+    auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](auto& entity)
+    {
+        libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
+
+        if(deviceDescriptor.idVendor == htons(CP210x::VID) &&
+           deviceDescriptor.idProduct == htons(CP210x::PID))
+        {
+            return true;
+        }
+
+        return false;
+    });
+
     SECTION("acm")
     {
-        auto desciptors = libusb.registry.view<libusb_device_descriptor>();
-
-        auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](auto& entity)
-        {
-            libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
-
-            if(deviceDescriptor.idVendor == htons(VID_CP210x) &&
-                deviceDescriptor.idProduct == htons(PID_CP210x))
-            {
-                return true;
-            }
-
-            return false;
-        });
-
 #if ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
@@ -66,11 +72,7 @@ TEST_CASE("usb")
 
             // so that AcmLibUsb spins down before dh.close() is called
             {
-                // Hardcoded for CP210x
-                constexpr uint8_t inEndpoint = 0x82;
-                constexpr uint8_t outEndpoint = 0x01;
-
-                AcmLibUsb acm1(dh, inEndpoint, outEndpoint);
+                AcmLibUsb acm1(dh, CP210x::inEndpoint, CP210x::outEndpoint);
 
                 acm1.setLineCoding(115200);
 
@@ -86,5 +88,22 @@ TEST_CASE("usb")
 #endif
 
         AcmLibUsb acm(deviceHandle, 0, 0);
+    }
+    SECTION("bulk")
+    {
+#if ENABLE_LIVE_USB_TEST
+        if(result != std::end(desciptors))
+        {
+            libusb_device* device = libusb.registry.get<libusb_device*>(*result);
+            moducom::libusb::Device _device(device);
+            moducom::libusb::DeviceHandle dh = _device.open();
+
+            {
+                LibUsbTransferIn in(eh, dh, CP210x::inEndpoint, 32);
+            }
+
+            dh.close();
+        }
+#endif
     }
 }
