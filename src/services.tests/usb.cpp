@@ -27,10 +27,11 @@ void printer(moducom::libusb::Buffer buffer)
     auto s = std::make_unique<std::string>((const char*)buffer.buffer, buffer.length);
 
     // At least we get a pseudo-queue of one async process by doing this
-    async_result = std::async(std::launch::async, [](auto _s)
+    async_result = std::async(std::launch::async, [buffer](auto _s)
     {
+        std::cout << "sz=" << buffer.length << ": ";
         std::cout << *_s;
-        //"sz = " << length << std::endl;
+        std::cout << std::endl;
     }, std::move(s));
 }
 
@@ -107,10 +108,17 @@ TEST_CASE("usb")
             dh.claim_interface(0);
 
             {
+                // THOUGHTS - UNCONFIRMED:
                 // 0 = infinite timeout, so in other words, waits forever until we get full buffer
                 // frustratingly, this seems to lose stuff along the way though could just be
                 // artifact of our goofy semi-async printer debug method
-                LibUsbTransfer in(eh, dh, CP210x::inEndpoint, 32, 0);
+                // On second thought, I'm thinking the "wait forever until full" isn't right.  I
+                // need a real TTY that I can push characters back and forth to really test this
+
+                // OBSERVATIONS
+                // We don't get any overflows at 64, even though it likes to do 300~ size transfers
+                // for this use case.
+                LibUsbTransfer in(eh, dh, CP210x::inEndpoint, 64);
 
                 //auto& sink = eh.get<entt::sink<void (moducom::libusb::Buffer)> >();
 
@@ -118,7 +126,9 @@ TEST_CASE("usb")
 
                 in.sinkTransferCompleted.connect<printer>();
 
-                in.start();
+                bool dmaMode = in.start();
+
+                INFO("dmaMode=" << dmaMode);
 
                 libusb.run();
                 libusb.run();

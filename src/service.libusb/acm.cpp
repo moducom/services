@@ -165,6 +165,20 @@ AcmLibUsb::~AcmLibUsb()
 
 inline void LibUsbTransfer::transferCallbackBulk(libusb_transfer* transfer)
 {
+    // DEBT: Dummy functions just for debugging for now
+    if(transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
+    {
+        int l = transfer->actual_length;
+        this->transfer.submit();
+        return;
+    }
+    else if(transfer->status == LIBUSB_TRANSFER_OVERFLOW)
+    {
+        int l = transfer->actual_length;
+        this->transfer.submit();
+        return;
+    }
+
     sighTransferCompleted.publish(libusb::Buffer{
             transfer->buffer,
             transfer->actual_length});
