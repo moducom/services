@@ -63,7 +63,7 @@ public:
         in.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
                               _transferCallback, this, 0);
         eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
-                                                               sinkTransferReceived);
+                                                               sighTransferReceived);
     }
 
     ///
@@ -79,7 +79,10 @@ public:
         if(!dmaBufferMode)
             t->buffer = (unsigned char*) malloc(in.length());
 
-        in.submit();
+        libusb_error error = in.submit();
+
+        if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
+
         status(Status::Started);
         status(Status::Running);
 
@@ -118,6 +121,13 @@ public:
         t->flags |= LIBUSB_TRANSFER_FREE_BUFFER;
     }
 };
+
+// EXPERIMENTAL
+void acmSetLineCoding(uint32_t bps,
+                      uint8_t bCharFormat = 0,
+                      uint8_t bParityType = 0,
+                      uint8_t bDataBits = 8);
+
 
 class AcmLibUsb : public LibUsbBidirectionalDeviceBase
 {

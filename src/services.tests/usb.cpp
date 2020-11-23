@@ -19,7 +19,7 @@ static std::future<void> async_result;
 
 // For the sake of running REAL unit tests vs abusing them as
 // experimentation and integration tests
-#define ENABLE_LIVE_USB_TEST 1
+#define ENABLE_LIVE_USB_TEST 0
 
 // since this is called on the USB event "thread", we need to get in and out of here asap
 void printer(moducom::libusb::Buffer buffer)
@@ -91,6 +91,7 @@ TEST_CASE("usb")
     }
     SECTION("bulk")
     {
+        // Not working yet, presumably because I don't set line coding yet
 #if ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
@@ -98,8 +99,21 @@ TEST_CASE("usb")
             moducom::libusb::Device _device(device);
             moducom::libusb::DeviceHandle dh = _device.open();
 
+            dh.set_auto_detach_kernel_driver(true);
+
             {
                 LibUsbTransferIn in(eh, dh, CP210x::inEndpoint, 32);
+
+                auto& sink = eh.get<entt::sink<void (moducom::libusb::Buffer)> >();
+
+                sink.connect<printer>();
+
+                in.start();
+
+                libusb.run();
+                libusb.run();
+
+                in.stop();
             }
 
             dh.close();
