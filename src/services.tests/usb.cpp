@@ -89,11 +89,12 @@ TEST_CASE("usb")
         }
 #endif
 
-        AcmLibUsb acm(deviceHandle, 0, 0);
+        //AcmLibUsb acm(deviceHandle, 0, 0);
     }
     SECTION("bulk")
     {
-        // Not working yet, presumably because I don't set line coding yet
+        using namespace std::chrono_literals;
+
 #if ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
@@ -108,11 +109,19 @@ TEST_CASE("usb")
             {
                 LibUsbTransfer in(eh, dh, CP210x::inEndpoint, 32);
 
-                auto& sink = eh.get<entt::sink<void (moducom::libusb::Buffer)> >();
+                //auto& sink = eh.get<entt::sink<void (moducom::libusb::Buffer)> >();
 
-                sink.connect<printer>();
+                //in.sinkTransferCompleted.connect<printer>();
 
+                // FIX: Something very odd is going on.  If I place in.start() after
+                // sink.connect, we never get any callbacks from libusb.  Some kind of
+                // delay/extra activity seems to be required before libusb.run() actually
+                // kicks off the callbacks.  Baffled on this one.
                 in.start();
+
+                //std::this_thread::sleep_for(2s);
+
+                //sink.connect<printer>();
 
                 libusb.run();
                 libusb.run();

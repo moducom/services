@@ -192,9 +192,11 @@ public:
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
-    libusb_error set_auto_detach_kernel_driver(bool enable)
+    void set_auto_detach_kernel_driver(bool enable)
     {
-        return (libusb_error) libusb_set_auto_detach_kernel_driver(device_handle, enable);
+        auto result = (libusb_error) libusb_set_auto_detach_kernel_driver(device_handle, enable);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
     void claim_interface(int interface_number)

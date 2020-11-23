@@ -97,13 +97,16 @@ class LibUsbTransfer : public LibUsbTransferBase
     static void _transferCallback(libusb_transfer* transfer);
 
 public:
+    entt::sink<void (libusb::Buffer)> sinkTransferCompleted;
+
     LibUsbTransfer(agents::EnttHelper eh,
                      libusb::DeviceHandle deviceHandle,
-                     uint8_t endpoint, int size) :
-            base_type(eh)
+                     uint8_t endpoint, int length, unsigned timeout = 0) :
+            base_type(eh),
+            sinkTransferCompleted{sighTransferCompleted}
     {
-        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
-                                    _transferCallback, this, 0);
+        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
+                                    _transferCallback, this, timeout);
         eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
                                                                sighTransferCompleted);
     }
