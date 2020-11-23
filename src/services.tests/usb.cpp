@@ -19,7 +19,7 @@ static std::future<void> async_result;
 
 // For the sake of running REAL unit tests vs abusing them as
 // experimentation and integration tests
-#define ENABLE_LIVE_USB_TEST 0
+#define ENABLE_LIVE_USB_TEST 1
 
 // since this is called on the USB event "thread", we need to get in and out of here asap
 void printer(moducom::libusb::Buffer buffer)
@@ -61,7 +61,7 @@ TEST_CASE("usb")
 
     SECTION("acm")
     {
-#if ENABLE_LIVE_USB_TEST
+#if DISABLED_ENABLE_LIVE_USB_TEST
         if(result != std::end(desciptors))
         {
             libusb_device* device = libusb.registry.get<libusb_device*>(*result);
@@ -74,7 +74,9 @@ TEST_CASE("usb")
             {
                 AcmLibUsb acm1(dh, CP210x::inEndpoint, CP210x::outEndpoint);
 
-                acm1.setLineCoding(115200);
+                // BUGGED: Sends (nothing?) out over 'out' when should be sending over 'control'
+                // - listening doesn't require anyway, so leaving to fix another day
+                //acm1.setLineCoding(115200);
 
                 acm1.sinkTransferReceived.connect<printer>();
 

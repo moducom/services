@@ -168,14 +168,14 @@ inline void LibUsbTransferIn::transferCallbackBulk(libusb_transfer* transfer)
             transfer->buffer,
             transfer->actual_length});
 
-    in.submit();
+    this->transfer.submit();
 }
 
 
 inline void LibUsbTransferIn::transferCallbackCancel(libusb_transfer* transfer)
 {
     if(dmaBufferMode)
-        in.device_handle().free(transfer->buffer, in.length());
+        this->transfer.device_handle().free(transfer->buffer, this->transfer.length());
     else
         free(transfer->buffer);
 
@@ -190,6 +190,37 @@ void LibUsbTransferIn::_transferCallback(libusb_transfer* transfer)
         ((LibUsbTransferIn*)transfer->user_data)->transferCallbackCancel(transfer);
     else
         ((LibUsbTransferIn*)transfer->user_data)->transferCallbackBulk(transfer);
+}
+
+
+inline void LibUsbTransfer::transferCallbackBulk(libusb_transfer* transfer)
+{
+    sighTransferCompleted.publish(libusb::Buffer{
+            transfer->buffer,
+            transfer->actual_length});
+
+    this->transfer.submit();
+}
+
+
+inline void LibUsbTransfer::transferCallbackCancel(libusb_transfer* transfer)
+{
+    if(dmaBufferMode)
+        this->transfer.device_handle().free(transfer->buffer, this->transfer.length());
+    else
+        free(transfer->buffer);
+
+    status(Status::Stopped);
+}
+
+
+
+void LibUsbTransfer::_transferCallback(libusb_transfer* transfer)
+{
+    if(transfer->status == LIBUSB_TRANSFER_CANCELLED)
+        ((LibUsbTransfer*)transfer->user_data)->transferCallbackCancel(transfer);
+    else
+        ((LibUsbTransfer*)transfer->user_data)->transferCallbackBulk(transfer);
 }
 
 }}

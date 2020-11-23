@@ -37,33 +37,23 @@ struct
 
 #pragma pack(pop)
 
-class LibUsbTransferIn : public agents::Agent
+// agent/service + entt:signal wrapper for libusb_transfer
+class LibUsbTransferBase : public agents::Agent
 {
+protected:
     typedef agents::Agent base_type;
 
-    libusb::Transfer in;
+    libusb::Transfer transfer;
 
-    entt::sigh<void (libusb::Buffer)> sighTransferReceived;
-
-    void transferCallbackBulk(libusb_transfer* transfer);
-    void transferCallbackCancel(libusb_transfer* transfer);
-    static void _transferCallback(libusb_transfer* transfer);
+    entt::sigh<void (libusb::Buffer)> sighTransferCompleted;
 
     bool dmaBufferMode;
 
 public:
-    entt::sink<void (libusb::Buffer)> sinkTransferReceived;
-
-    LibUsbTransferIn(agents::EnttHelper eh,
-                     libusb::DeviceHandle deviceHandle,
-                     uint8_t endpoint, int size) :
-        base_type(eh),
-        sinkTransferReceived{sighTransferReceived}
+    LibUsbTransferBase(agents::EnttHelper eh) :
+        base_type(eh)
     {
-        in.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
-                              _transferCallback, this, 0);
-        eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
-                                                               sighTransferReceived);
+
     }
 
     ///
@@ -71,15 +61,15 @@ public:
     bool start()
     {
         status(Status::Starting);
-        libusb_transfer* t = in;
-        t->buffer = in.device_handle().alloc(in.length());
+        libusb_transfer* t = transfer;
+        t->buffer = transfer.device_handle().alloc(transfer.length());
 
         dmaBufferMode = t->buffer != nullptr;
 
         if(!dmaBufferMode)
-            t->buffer = (unsigned char*) malloc(in.length());
+            t->buffer = (unsigned char*) malloc(transfer.length());
 
-        libusb_error error = in.submit();
+        libusb_error error = transfer.submit();
 
         if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
 
@@ -93,10 +83,60 @@ public:
     void stop()
     {
         status(Status::Stopping);
-        libusb_transfer* t = in;
-        in.cancel();
+        transfer.cancel();
     }
 };
+
+
+// OBSOLETE do not use
+class LibUsbTransferIn : public LibUsbTransferBase
+{
+    typedef LibUsbTransferBase base_type;
+
+    entt::sigh<void (libusb::Buffer)> sighTransferReceived;
+
+    void transferCallbackBulk(libusb_transfer* transfer);
+    void transferCallbackCancel(libusb_transfer* transfer);
+    static void _transferCallback(libusb_transfer* transfer);
+
+public:
+    entt::sink<void (libusb::Buffer)> sinkTransferReceived;
+
+    LibUsbTransferIn(agents::EnttHelper eh,
+                     libusb::DeviceHandle deviceHandle,
+                     uint8_t endpoint, int size) :
+        base_type(eh),
+        sinkTransferReceived{sighTransferReceived}
+    {
+        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
+                              _transferCallback, this, 0);
+        eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
+                                                               sighTransferReceived);
+    }
+};
+
+
+class LibUsbTransfer : public LibUsbTransferBase
+{
+    typedef LibUsbTransferBase base_type;
+
+    void transferCallbackBulk(libusb_transfer* transfer);
+    void transferCallbackCancel(libusb_transfer* transfer);
+    static void _transferCallback(libusb_transfer* transfer);
+
+public:
+    LibUsbTransfer(agents::EnttHelper eh,
+                     libusb::DeviceHandle deviceHandle,
+                     uint8_t endpoint, int size) :
+            base_type(eh)
+    {
+        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
+                                    _transferCallback, this, 0);
+        eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
+                                                               sighTransferCompleted);
+    }
+};
+
 
 class LibUsbBidirectionalDeviceBase
 {
