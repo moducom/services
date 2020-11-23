@@ -162,36 +162,6 @@ AcmLibUsb::~AcmLibUsb()
     }
 }
 
-inline void LibUsbTransferIn::transferCallbackBulk(libusb_transfer* transfer)
-{
-    sighTransferReceived.publish(libusb::Buffer{
-            transfer->buffer,
-            transfer->actual_length});
-
-    this->transfer.submit();
-}
-
-
-inline void LibUsbTransferIn::transferCallbackCancel(libusb_transfer* transfer)
-{
-    if(dmaBufferMode)
-        this->transfer.device_handle().free(transfer->buffer, this->transfer.length());
-    else
-        free(transfer->buffer);
-
-    status(Status::Stopped);
-}
-
-
-
-void LibUsbTransferIn::_transferCallback(libusb_transfer* transfer)
-{
-    if(transfer->status == LIBUSB_TRANSFER_CANCELLED)
-        ((LibUsbTransferIn*)transfer->user_data)->transferCallbackCancel(transfer);
-    else
-        ((LibUsbTransferIn*)transfer->user_data)->transferCallbackBulk(transfer);
-}
-
 
 inline void LibUsbTransfer::transferCallbackBulk(libusb_transfer* transfer)
 {

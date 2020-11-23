@@ -88,34 +88,6 @@ public:
 };
 
 
-// OBSOLETE do not use
-class LibUsbTransferIn : public LibUsbTransferBase
-{
-    typedef LibUsbTransferBase base_type;
-
-    entt::sigh<void (libusb::Buffer)> sighTransferReceived;
-
-    void transferCallbackBulk(libusb_transfer* transfer);
-    void transferCallbackCancel(libusb_transfer* transfer);
-    static void _transferCallback(libusb_transfer* transfer);
-
-public:
-    entt::sink<void (libusb::Buffer)> sinkTransferReceived;
-
-    LibUsbTransferIn(agents::EnttHelper eh,
-                     libusb::DeviceHandle deviceHandle,
-                     uint8_t endpoint, int size) :
-        base_type(eh),
-        sinkTransferReceived{sighTransferReceived}
-    {
-        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, size,
-                              _transferCallback, this, 0);
-        eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
-                                                               sighTransferReceived);
-    }
-};
-
-
 class LibUsbTransfer : public LibUsbTransferBase
 {
     typedef LibUsbTransferBase base_type;

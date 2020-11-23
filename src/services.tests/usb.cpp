@@ -103,8 +103,10 @@ TEST_CASE("usb")
 
             dh.set_auto_detach_kernel_driver(true);
 
+            dh.claim_interface(0);
+
             {
-                LibUsbTransferIn in(eh, dh, CP210x::inEndpoint, 32);
+                LibUsbTransfer in(eh, dh, CP210x::inEndpoint, 32);
 
                 auto& sink = eh.get<entt::sink<void (moducom::libusb::Buffer)> >();
 
@@ -117,6 +119,8 @@ TEST_CASE("usb")
 
                 in.stop();
             }
+
+            dh.release_interface(0);
 
             dh.close();
         }
