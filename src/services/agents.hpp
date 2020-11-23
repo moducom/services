@@ -318,6 +318,14 @@ public:
     {
         return service_type::description();
     }
+
+    template <class ... TArgs>
+    void construct(TArgs&&...args)
+    {
+        Agent::status(Status::Starting);
+        container_base::construct(std::forward<TArgs>(args)...);
+        Agent::status(Status::Started);
+    }
 };
 
 template <class TService, ServiceBase::ThreadPreference>
@@ -496,14 +504,11 @@ public:
     {
 
     }
-
     template <class ... TArgs>
     void construct(TArgs&&...args)
     {
-        base_type::status(Status::Starting);
         base_type::construct(std::forward<TArgs>(args)...);
-        base_type::status(Status::Started);
-        base_type::status(Status::Waiting);
+        Agent::status(Status::Waiting);
     }
 
     // remember, run is a gentle misnomer here, it really means "handle event of given args"
