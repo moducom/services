@@ -24,10 +24,14 @@ class Transfer
     enum Flags
     {
         DmaMode,
-        OneShot
+        OneShot,
+        External
     };
 
     std::bitset<4> flags;
+
+    void alloc();
+    void free();
 
 public:
     Transfer(libusb::DeviceHandle deviceHandle,
@@ -35,13 +39,21 @@ public:
     {
         transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
                                     transferCallback, this, timeout);
-
     }
 
-    // TBD: For one shots
-    void restart() {}
+    ///
+    /// \param length
+    /// \details It is assumed if (re)starting a one shot, that the previous transfer
+    ///          has reached its conclusion.
+    void oneshot(unsigned char* external, int length)
+    {
+        libusb_transfer* t = transfer;
+        if(t->buffer)   free();
+        t->length = length;
+        start(external);
+    }
 
-    void start();
+    void start(unsigned char* external = nullptr);
     void stop()
     {
         transfer.cancel();

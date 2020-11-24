@@ -211,6 +211,28 @@ void LibUsbTransfer::_transferCallback(libusb_transfer* transfer)
 
 namespace moducom { namespace libusb { namespace services {
 
+inline void Transfer::alloc()
+{
+    libusb_transfer* t = transfer;
+
+    t->buffer = transfer.device_handle().alloc(transfer.length());
+
+    bool dmaBufferMode = flags[DmaMode] = t->buffer != nullptr;
+
+    if (!dmaBufferMode)
+        t->buffer = (unsigned char*) malloc(transfer.length());
+}
+
+void Transfer::free()
+{
+    libusb_transfer* t = transfer;
+
+    if(flags[DmaMode])
+        transfer.device_handle().free(t->buffer, transfer.length());
+    else if(!flags[External])
+        ::free(t->buffer);
+}
+
 inline void Transfer::callback()
 {
     libusb_transfer* t = transfer;
@@ -225,12 +247,7 @@ inline void Transfer::callback()
             break;
 
         case LIBUSB_TRANSFER_CANCELLED:
-        {
-            if(flags[DmaMode])
-                transfer.device_handle().free(t->buffer, transfer.length());
-            else
-                free(t->buffer);
-        }
+            free();
 
         default:
             sighStatus.publish(transfer);
@@ -247,15 +264,17 @@ void Transfer::transferCallback(libusb_transfer* transfer)
 }
 
 
-void Transfer::start()
+void Transfer::start(unsigned char* external)
 {
     libusb_transfer* t = transfer;
-    t->buffer = transfer.device_handle().alloc(transfer.length());
 
-    bool dmaBufferMode = flags[DmaMode] = t->buffer != nullptr;
-
-    if(!dmaBufferMode)
-        t->buffer = (unsigned char*) malloc(transfer.length());
+    if(external == nullptr)
+        alloc();
+    else
+    {
+        flags[External] = true;
+        t->buffer = external;
+    }
 
     libusb_error error = transfer.submit();
 
