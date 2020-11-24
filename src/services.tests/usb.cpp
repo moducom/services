@@ -4,6 +4,9 @@
 #include <service.libusb/usb.h>
 #include <service.libusb/acm.h>
 
+#include <iostream>
+#include <iomanip>
+
 using namespace moducom::services;
 
 // In my case, for ESP32 CP2104
@@ -20,6 +23,25 @@ static std::future<void> async_result;
 // For the sake of running REAL unit tests vs abusing them as
 // experimentation and integration tests
 #define ENABLE_LIVE_USB_TEST 1
+
+void printDevices(const entt::registry& registry)
+{
+    std::cout << std::hex;
+    std::cout.fill('0');
+
+    registry.each([&](const entt::entity e)
+    {
+        const auto& deviceDescriptor = registry.get<libusb_device_descriptor>(e);
+
+        std::cout << "Device: ";
+
+        std::cout << std::setw(4);
+        std::cout << deviceDescriptor.idVendor << ":";
+        std::cout << std::setw(4);
+        std::cout << deviceDescriptor.idProduct;
+        std::cout << std::endl;
+    });
+}
 
 // since this is called on the USB event "thread", we need to get in and out of here asap
 void printer(moducom::libusb::Buffer buffer)
@@ -112,6 +134,8 @@ TEST_CASE("usb")
         libusb2.construct();
 
         auto& libusb = libusb2.service();
+
+        printDevices(libusb.registry);
 
         entt::entity deviceEntity = libusb.findDevice([](const libusb_device_descriptor& d)
         {
