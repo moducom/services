@@ -60,4 +60,55 @@ public:
     }
 };
 
+class Device
+{
+protected:
+    libusb::DeviceHandle deviceHandle;
+
+public:
+    Device(libusb::Device device) :
+        deviceHandle(device.open())
+    {
+    }
+
+    ~Device()
+    {
+        deviceHandle.close();
+    }
+};
+
+
+namespace experimental {
+
+template <class TDevice>
+struct DeviceTraits;
+
+struct CP210xTraits
+{
+    static constexpr uint16_t VID = 0x10c4;
+    static constexpr uint16_t PID = 0xea60;
+    static constexpr uint8_t inEndpoint = 0x82;
+    static constexpr uint8_t outEndpoint = 0x01;
+
+    static constexpr uint8_t endpoints[] = { outEndpoint, inEndpoint };
+};
+
+template <class TDeviceTraits>
+struct Device : public services::Device
+{
+    typedef services::Device base_type;
+    typedef TDeviceTraits traits_type;
+
+    libusb::Transfer transfers[sizeof(traits_type::endpoints)];
+
+    Device(libusb::Device device) :
+        base_type(device)
+    {}
+};
+
+}
+
+
+
+
 }}}
