@@ -212,11 +212,14 @@ public:
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
-    void set_auto_detach_kernel_driver(bool enable)
+    /// \param inhibitException since unsupported platforms can safely ignore this call, we default
+    /// to silently swallowing the LIBUSB_ERROR_NOT_SUPPORTED which emits in that case - since that's
+    /// the only documented failure possibility
+    void set_auto_detach_kernel_driver(bool enable, bool inhibitException = true)
     {
         auto result = (libusb_error) libusb_set_auto_detach_kernel_driver(device_handle, enable);
 
-        if(result != LIBUSB_SUCCESS) throw Exception(result);
+        if(!inhibitException && result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
     void claim_interface(int interface_number)
