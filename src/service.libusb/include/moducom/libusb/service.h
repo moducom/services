@@ -91,6 +91,10 @@ struct CP210xTraits
     static constexpr uint8_t outEndpoint = 0x01;
 
     static constexpr uint8_t endpoints[] = { outEndpoint, inEndpoint };
+    static constexpr uint8_t interfaces[] = { 0 };
+
+    static constexpr uint8_t outEndpointIdx = 0;
+    static constexpr uint8_t inEndpointIdx = 1;
 };
 
 template <class TDeviceTraits>
@@ -103,7 +107,16 @@ struct Device : public services::Device
 
     Device(libusb::Device device) :
         base_type(device)
-    {}
+    {
+        for(uint8_t interface : traits_type::interfaces)
+            deviceHandle.claim_interface(interface);
+    }
+
+    ~Device()
+    {
+        for(uint8_t interface : traits_type::interfaces)
+            deviceHandle.release_interface(interface);
+    }
 };
 
 }
