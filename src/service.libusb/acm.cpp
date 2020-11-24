@@ -208,3 +208,58 @@ void LibUsbTransfer::_transferCallback(libusb_transfer* transfer)
 }
 
 }}
+
+namespace moducom { namespace libusb { namespace services {
+
+inline void Transfer::callback()
+{
+    libusb_transfer* t = transfer;
+
+    switch(t->status)
+    {
+        case LIBUSB_TRANSFER_COMPLETED:
+            sighCompleted.publish(transfer);
+            if(!flags[OneShot])
+                // DEBT: Need to check return value of this and do something if it fails
+                transfer.submit();
+            break;
+
+        case LIBUSB_TRANSFER_CANCELLED:
+        {
+            if(flags[DmaMode])
+                transfer.device_handle().free(t->buffer, transfer.length());
+            else
+                free(t->buffer);
+        }
+
+        default:
+            sighStatus.publish(transfer);
+            break;
+    }
+}
+
+void Transfer::transferCallback(libusb_transfer* transfer)
+{
+    auto _this = (Transfer*)transfer->user_data;
+
+    // TODO: Assert that incoming 'transfer' is same as _this->transfer
+    _this->callback();
+}
+
+
+void Transfer::start()
+{
+    libusb_transfer* t = transfer;
+    t->buffer = transfer.device_handle().alloc(transfer.length());
+
+    bool dmaBufferMode = flags[DmaMode] = t->buffer != nullptr;
+
+    if(!dmaBufferMode)
+        t->buffer = (unsigned char*) malloc(transfer.length());
+
+    libusb_error error = transfer.submit();
+
+    if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
+}
+
+}}}

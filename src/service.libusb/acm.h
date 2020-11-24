@@ -4,6 +4,8 @@
 #include <services/service.hpp>
 #include <services/agents.hpp>
 
+#include <moducom/libusb/service.h>
+
 // [1] See "USB Class Definitions for Communications Devices" v1.1 (1999)
 // https://cscott.net/usb_dev/data/devclass/usbcdc11.pdf
 
@@ -43,9 +45,9 @@ class LibUsbTransferBase : public agents::Agent
 protected:
     typedef agents::Agent base_type;
 
-    libusb::Transfer transfer;
+    moducom::libusb::Transfer transfer;
 
-    entt::sigh<void (libusb::Buffer)> sighTransferCompleted;
+    entt::sigh<void (moducom::libusb::Buffer)> sighTransferCompleted;
 
     bool dmaBufferMode;
 

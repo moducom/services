@@ -152,8 +152,8 @@ TEST_CASE("usb")
 
                 INFO("dmaMode=" << dmaMode);
 
-                libusb.run();
-                libusb.run();
+                libusb2.run();
+                libusb2.run();
 
                 in.stop();
             }

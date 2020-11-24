@@ -11,12 +11,14 @@ endif()
 
 add_library(${PROJECT_NAME}
         acm.cpp acm.h
+        include/moducom/libusb/service.h
         usb.cpp usb.h
         wrapper.h)
 
 # DEBT: So damn sloppy
 #target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 target_link_libraries(${PROJECT_NAME}
         CONAN_PKG::entt CONAN_PKG::libusb

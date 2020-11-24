@@ -75,6 +75,12 @@ public:
     {
         libusb_fill_control_transfer(transfer, dev_handle, buffer, callback, user_data, timeout);
     }
+
+    Buffer buffer(bool use_total_length = false)
+    {
+        return Buffer{transfer->buffer,
+                      use_total_length ? transfer->length : transfer->actual_length};
+    }
 };
 
 
