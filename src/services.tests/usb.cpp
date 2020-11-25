@@ -22,24 +22,39 @@ static std::future<void> async_result;
 
 // For the sake of running REAL unit tests vs abusing them as
 // experimentation and integration tests
-#define ENABLE_LIVE_USB_TEST 1
+#define ENABLE_LIVE_USB_TEST 0
 
 void printDevices(const entt::registry& registry)
 {
-    std::cout << std::hex;
     std::cout.fill('0');
 
     registry.each([&](const entt::entity e)
     {
         const auto& deviceDescriptor = registry.get<libusb_device_descriptor>(e);
+        const libusb_config_descriptor* config = registry.get<moducom::libusb::ConfigDescriptor>(e);
 
         std::cout << "Device: ";
 
+        std::cout << std::hex;
         std::cout << std::setw(4);
         std::cout << deviceDescriptor.idVendor << ":";
         std::cout << std::setw(4);
         std::cout << deviceDescriptor.idProduct;
+
+        std::cout << " - class=" << (int)deviceDescriptor.bDeviceClass;
+        std::cout << ", configs=" << (int)deviceDescriptor.bNumConfigurations;
+
+        std::cout << std::dec;
         std::cout << std::endl;
+
+        for(int i = 0; i < config->bNumInterfaces; i++)
+        {
+            const libusb_interface& interface = config->interface[i];
+            std::cout << "  interface = " << (int)interface.altsetting->bInterfaceNumber << std::endl;
+            std::cout << "  class     = " << (int)interface.altsetting->bInterfaceClass << std::endl;
+            std::cout << "  subclass  = " << (int)interface.altsetting->bInterfaceSubClass << std::endl;
+            std::cout << "  protocol  = " << (int)interface.altsetting->bInterfaceProtocol << std::endl;
+        }
     });
 }
 
