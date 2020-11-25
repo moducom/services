@@ -239,6 +239,20 @@ public:
 };
 
 
+/// Probably useless
+class ConfigDescriptor
+{
+    libusb_config_descriptor* const config;
+
+public:
+    ConfigDescriptor(libusb_config_descriptor* config) :
+            config(config)
+    {
+
+    }
+};
+
+
 class Device
 {
     libusb_device* const device;
@@ -264,6 +278,28 @@ public:
     DeviceHandle open()
     {
         return DeviceHandle::open(device);
+    }
+
+    ConfigDescriptor get_active_config_descriptor()
+    {
+        libusb_config_descriptor* config;
+
+        auto status = (libusb_error) libusb_get_active_config_descriptor(device, &config);
+
+        if(status != LIBUSB_SUCCESS) throw Exception(status);
+
+        return config;
+    }
+
+    ConfigDescriptor get_config_descriptor(int index)
+    {
+        libusb_config_descriptor* config;
+
+        auto status = (libusb_error) libusb_get_config_descriptor(device, index, &config);
+
+        if(status != LIBUSB_SUCCESS) throw Exception(status);
+
+        return config;
     }
 };
 
@@ -350,5 +386,7 @@ public:
         return transfer->dev_handle;
     }
 };
+
+
 
 }}
