@@ -121,6 +121,13 @@ static entt::registry dummyRegistry;
 LibUsb::LibUsb()
 {
     context.init();
+#ifdef __WINDOWS__
+    // Guidance from
+    // https://github.com/libusb/libusb/wiki/Windows#Driver_Installation
+    // NOTE: Gets a LIBUSB_ERROR_NOT_FOUND unless one installs
+    // https://cgit.freedesktop.org/spice/win32/usbdk
+    //context.option(LIBUSB_OPTION_USE_USBDK);
+#endif
 
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
     {
