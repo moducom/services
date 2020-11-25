@@ -391,6 +391,13 @@ public:
     }
 
     operator libusb_context*() const { return context; }
+
+    void option(libusb_option option)
+    {
+        auto status = (libusb_error)libusb_set_option(context, option);
+
+        if (status != LIBUSB_SUCCESS) throw libusb::Exception(status);
+    }
 };
 
 

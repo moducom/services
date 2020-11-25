@@ -15,9 +15,16 @@ inline void LibUsb::add_device(libusb_device* device)
 
     bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
 
-    libusb::ConfigDescriptor config = d.get_active_config_descriptor();
+    try
+    {
+        libusb::ConfigDescriptor config = d.get_active_config_descriptor();
 
-    registry.emplace<libusb::ConfigDescriptor>(id, config);
+        registry.emplace<libusb::ConfigDescriptor>(id, config);
+    }
+    catch (const libusb::Exception& e)
+    {
+        // unconfigured devices are not unusual
+    }
 
     d.ref();
     registry.emplace<libusb_device*>(id, device);
@@ -44,7 +51,7 @@ inline void LibUsb::add_device(libusb_device* device)
 
 inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)
 {
-    auto& config = registry.get<libusb::ConfigDescriptor>(deviceId);
+    auto config = registry.try_get<libusb::ConfigDescriptor>(deviceId);
     // FIX: Somehow, freeing this config descriptor invokes a segfault at the end of LibUsb dtor
     //config.free();
     d.unref();

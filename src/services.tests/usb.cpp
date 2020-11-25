@@ -31,7 +31,7 @@ void printDevices(const entt::registry& registry)
     registry.each([&](const entt::entity e)
     {
         const auto& deviceDescriptor = registry.get<libusb_device_descriptor>(e);
-        const libusb_config_descriptor* config = registry.get<moducom::libusb::ConfigDescriptor>(e);
+        const moducom::libusb::ConfigDescriptor* _config = registry.try_get<moducom::libusb::ConfigDescriptor>(e);
 
         std::cout << "Device: ";
 
@@ -47,13 +47,18 @@ void printDevices(const entt::registry& registry)
         std::cout << std::dec;
         std::cout << std::endl;
 
-        for(int i = 0; i < config->bNumInterfaces; i++)
+        if (_config != nullptr)
         {
-            const libusb_interface& interface = config->interface[i];
-            std::cout << "  interface = " << (int)interface.altsetting->bInterfaceNumber << std::endl;
-            std::cout << "  class     = " << (int)interface.altsetting->bInterfaceClass << std::endl;
-            std::cout << "  subclass  = " << (int)interface.altsetting->bInterfaceSubClass << std::endl;
-            std::cout << "  protocol  = " << (int)interface.altsetting->bInterfaceProtocol << std::endl;
+            const libusb_config_descriptor* config = *_config;
+
+            for (int i = 0; i < config->bNumInterfaces; i++)
+            {
+                const libusb_interface& interface = config->interface[i];
+                std::cout << "  interface = " << (int)interface.altsetting->bInterfaceNumber << std::endl;
+                std::cout << "  class     = " << (int)interface.altsetting->bInterfaceClass << std::endl;
+                std::cout << "  subclass  = " << (int)interface.altsetting->bInterfaceSubClass << std::endl;
+                std::cout << "  protocol  = " << (int)interface.altsetting->bInterfaceProtocol << std::endl;
+            }
         }
     });
 }
