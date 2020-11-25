@@ -46,6 +46,7 @@ class LibUsb : public ServiceBase
     libusb::Context context;
     libusb_hotplug_callback_handle hotplug_callback_handle;
 
+    void remove_device(libusb::Device d, entt::entity deviceId);
     void add_device(libusb_device*);
     void remove_device(libusb_device*);
     void refresh_devices();

@@ -250,6 +250,27 @@ public:
     {
 
     }
+
+    ConfigDescriptor(const ConfigDescriptor&) = default;
+
+    ConfigDescriptor(ConfigDescriptor&& moveFrom) :
+        config(moveFrom.config)
+    {
+        // DEBT: Almost definitely should make config = null in moveFrom
+    }
+
+    ConfigDescriptor& operator=(ConfigDescriptor&& moveFrom)
+    {
+        new (*this) ConfigDescriptor(std::move(moveFrom));
+        return *this;
+    }
+
+    operator libusb_config_descriptor*() const { return config; }
+
+    void free()
+    {
+        libusb_free_config_descriptor(config);
+    }
 };
 
 

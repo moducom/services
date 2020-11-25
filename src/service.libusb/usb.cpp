@@ -15,6 +15,10 @@ inline void LibUsb::add_device(libusb_device* device)
 
     bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
 
+    libusb::ConfigDescriptor config = d.get_active_config_descriptor();
+
+    registry.emplace<libusb::ConfigDescriptor>(id, config);
+
     d.ref();
     registry.emplace<libusb_device*>(id, device);
 
@@ -38,6 +42,16 @@ inline void LibUsb::add_device(libusb_device* device)
     }
 }
 
+inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)
+{
+    auto& config = registry.get<libusb::ConfigDescriptor>(deviceId);
+    // FIX: Somehow, freeing this config descriptor invokes a segfault at the end of LibUsb dtor
+    //config.free();
+    d.unref();
+    registry.remove_all(deviceId);
+
+}
+
 
 inline void LibUsb::remove_device(libusb_device* device)
 {
@@ -51,11 +65,7 @@ inline void LibUsb::remove_device(libusb_device* device)
     });
 
     if(result != std::end(devices))
-    {
-        entt::entity found = *result;
-        d.unref();
-        registry.remove_all(found);
-    }
+        remove_device(d, *result);
 }
 
 // NOTE: Can't truly do a refresh here yet because we have to free device list too
@@ -131,6 +141,13 @@ LibUsb::~LibUsb()
 {
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
         context.hotplug_deregister_callback(hotplug_callback_handle);
+
+    // DEBT: All because our wrappers don't auto-free themselves, so we can't do
+    // a registry.remove_all or let it auto destruct
+    for(entt::entity entity : registry.view<libusb_device*>())
+    {
+        remove_device(registry.get<libusb_device*>(entity), entity);
+    }
 
     context.exit();
 }
