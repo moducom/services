@@ -385,6 +385,21 @@ public:
         if(status != LIBUSB_SUCCESS) throw libusb::Exception(status);
     }
 
+    void hotplug_register_callback(libusb_hotplug_event events,
+                                   libusb_hotplug_flag flags,
+                                   int vendor_id, int product_id,
+                                   int dev_class,
+                                   libusb_hotplug_callback_fn cb_fn,
+                                   void *user_data,
+                                   libusb_hotplug_callback_handle *callback_handle)
+    {
+        auto status = (libusb_error) libusb_hotplug_register_callback(context,
+                  events, flags, vendor_id, product_id, dev_class, cb_fn,
+                  user_data, callback_handle);
+
+        if(status != LIBUSB_SUCCESS) throw libusb::Exception(status);
+    }
+
     void hotplug_deregister_callback(libusb_hotplug_callback_handle callback_handle)
     {
         libusb_hotplug_deregister_callback(context, callback_handle);

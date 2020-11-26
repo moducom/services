@@ -131,8 +131,7 @@ LibUsb::LibUsb()
 
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
     {
-        libusb_hotplug_register_callback(
-                context,
+        context.hotplug_register_callback(
                 LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, // | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, // "It is the user's responsibility to call libusb_close"
                 LIBUSB_HOTPLUG_ENUMERATE,
                 LIBUSB_HOTPLUG_MATCH_ANY,
