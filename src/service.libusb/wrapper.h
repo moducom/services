@@ -407,9 +407,11 @@ public:
 
     operator libusb_context*() const { return context; }
 
-    void option(libusb_option option)
+    template <class ...TArgs>
+    void option(libusb_option option, TArgs&&...args)
     {
-        auto status = (libusb_error)libusb_set_option(context, option);
+        auto status = (libusb_error)libusb_set_option(context, option,
+                                                      std::forward<TArgs>(args)...);
 
         if (status != LIBUSB_SUCCESS) throw libusb::Exception(status);
     }

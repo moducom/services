@@ -129,6 +129,10 @@ LibUsb::LibUsb()
     //context.option(LIBUSB_OPTION_USE_USBDK);
 #endif
 
+    // on macOS, enabling this indicates libusb does appear to be working.  Perhaps it auto
+    // filters system devices?  No external USB devices at this time for me to test with
+    //context.option(LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
+
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
     {
         context.hotplug_register_callback(

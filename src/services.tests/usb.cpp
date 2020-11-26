@@ -155,8 +155,6 @@ TEST_CASE("usb")
 
         auto& libusb = libusb2.service();
 
-        libusb2.run();
-
         printDevices(libusb.registry);
 
         entt::entity deviceEntity = libusb.findDevice([](const libusb_device_descriptor& d)
