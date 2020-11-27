@@ -66,6 +66,20 @@ public:
     LibUsb();
     ~LibUsb();
 
+    struct Device
+    {
+        libusb_device_descriptor deviceDescriptor;
+        libusb::ConfigDescriptor activeConfigDescriptor;
+        libusb::Device device;
+
+        /*
+        Device(libusb_device* device) :
+            device(device)
+        {
+
+        } */
+    };
+
     static Description description()
     {
         return Description("libusb", SemVer{0, 1, 0});
