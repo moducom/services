@@ -52,13 +52,16 @@ inline void LibUsb::add_device(libusb_device* device)
 inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)
 {
     auto config = registry.try_get<libusb::ConfigDescriptor>(deviceId);
-    if(config != nullptr)
-        config->free();
     // FIX: Somehow, freeing this config descriptor invokes a segfault at the end of LibUsb dtor
-    // probably because before we weren't anticipating null
+    if(config != nullptr)
+    {
+        //config->free();
+    }
     //config.free();
     d.unref();
+
     registry.remove_all(deviceId);
+    registry.destroy(deviceId);
 
 }
 
