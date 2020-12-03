@@ -18,8 +18,6 @@
 #include <tuple>
 #include <utility>
 
-#include <moducom/services/status.h>
-#include "services.h"
 #include "moducom/services/agent.h"
 
 namespace moducom { namespace services { namespace agents {

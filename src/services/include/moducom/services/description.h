@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../semver.h"
+
 namespace moducom { namespace services {
 
 class Description
