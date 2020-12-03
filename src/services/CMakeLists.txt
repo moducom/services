@@ -12,9 +12,10 @@ add_library(${PROJECT_NAME}
         service.hpp services.h
 
         include/moducom/semver.h
+        include/moducom/services/description.h
         include/moducom/services/agent.h
         include/moducom/services/status.h
-        include/moducom/stop_token.h include/moducom/portable_endian.h)
+        include/moducom/stop_token.h include/moducom/portable_endian.h include/moducom/services/description.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 target_link_libraries(${PROJECT_NAME} CONAN_PKG::entt Threads::Threads)

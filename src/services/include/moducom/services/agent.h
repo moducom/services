@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "status.h"
+#include "description.h"
 
 namespace moducom { namespace services { namespace agents {
 
