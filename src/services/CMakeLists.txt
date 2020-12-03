@@ -12,6 +12,7 @@ add_library(${PROJECT_NAME}
         service.hpp services.h
 
         include/moducom/semver.h
+        include/moducom/services/agent.h
         include/moducom/services/status.h
         include/moducom/stop_token.h include/moducom/portable_endian.h)
 

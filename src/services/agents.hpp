@@ -20,98 +20,13 @@
 
 #include <moducom/services/status.h>
 #include "services.h"
+#include "moducom/services/agent.h"
 
 namespace moducom { namespace services { namespace agents {
 
-class EnttHelper
-{
-public:
-    entt::registry& registry;
-    const entt::entity entity;
 
-public:
-    EnttHelper(entt::registry& registry, entt::entity entity) :
-            registry(registry), entity(entity)
-    {}
-
-    EnttHelper(const EnttHelper& copyFrom) = default;
-
-    template <class TComponent>
-    TComponent& get()
-    {
-        return registry.get<TComponent>(entity);
-    }
-
-    template <class TComponent>
-    const TComponent& get() const
-    {
-        return registry.get<TComponent>(entity);
-    }
-};
-
-class Agent
-{
-    entt::sigh<void(Agent*, Status)> statusSignal_;
-    entt::sigh<void(Agent*, Progress)> progressSignal_;
-    entt::sigh<void(Agent*, Alert)> alertSignal_;
-
-protected:
-    EnttHelper entity;
-
-public:
-    entt::sink<void(Agent*, Status)> statusSink;
-    entt::sink<void(Agent*, Progress)> progressSink;
-    entt::sink<void(Agent*, Alert)> alertSink;
-
-
-    Agent(EnttHelper entity) :
-            entity(entity),
-            statusSink{statusSignal_},
-            progressSink{progressSignal_},
-            alertSink{alertSignal_}
-    {}
-
-    Status status_ = Status::Unstarted;
-
-    void status(Status s)
-    {
-        status_ = s;
-        // DEBT: Having both ECS and event style status probably gonna cause issues later, should
-        // choose just one
-        entity.registry.emplace_or_replace<Status>(entity.entity, s);
-        statusSignal_.publish(this, s);
-    }
-
-
-    // DEBT: In my experience, 'message' portion really wants to be something like a std::string
-    // because sometimes custom-built messages are presented
-    void progress(short percentage, std::string message, const char* subsystem = nullptr)
-    {
-        Progress p{percentage, subsystem, message};
-
-        progressSignal_.publish(this, p);
-    }
-
-    void progress(short percentage)
-    {
-        Progress p{percentage, nullptr};
-
-        progressSignal_.publish(this, p);
-    }
-
-    void error(std::string message, const char* subsystem = nullptr)
-    {
-        alertSignal_.publish(this, Alert{message, subsystem, Alert::Error});
-    }
-
-public:
-    Status status() const { return status_; }
-
-    const Description& description() const
-    {
-        return entity.get<Description>();
-    }
-};
+// DEBT: Holdover - API now should use moducom::services::Agent directly
+typedef moducom::services::Agent Agent;
 
 template <class T>
 class SignalingVector : public std::vector<T>
