@@ -37,27 +37,31 @@ protected:
 template <class TAgent>
 class SpecializedServiceToken : public StdThreadServiceToken
 {
-    TAgent& agent;
+    TAgent& agent_;
 
 public:
+    typedef TAgent agent_type;
+
     SpecializedServiceToken(const stop_token& stopToken, TAgent& agent) :
         StdThreadServiceToken(stopToken),
-        agent(agent)
+        agent_(agent)
     {
 
     }
 
     SpecializedServiceToken(SpecializedServiceToken&& moveFrom) :
         StdThreadServiceToken(std::move(moveFrom)),
-        agent(moveFrom.agent)
+        agent_(moveFrom.agent_)
     {
 
     }
 
     void start() override
     {
-        worker = agent.run(stopToken);
+        worker = agent_.run(stopToken);
     }
+
+    TAgent& agent() const { return agent_; }
 };
 
 }
