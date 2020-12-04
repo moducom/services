@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME}
         include/moducom/services/agent.h
         include/moducom/services/managers.hpp
         include/moducom/services/status.h
+        include/moducom/services/token.h
 
         include/moducom/stop_token.h
         )
