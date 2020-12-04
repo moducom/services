@@ -272,4 +272,10 @@ TEST_CASE("managers")
             manager.stop();
         }
     }
+    SECTION("event")
+    {
+        managers::EventManager manager(enttHelper);
+
+        auto serviceToken = manager.push<Periodic1<int>>();
+    }
 }

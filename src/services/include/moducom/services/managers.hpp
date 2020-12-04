@@ -64,6 +64,34 @@ public:
     TAgent& agent() const { return agent_; }
 };
 
+
+template <class TAgent>
+class EventToken : public ServiceToken
+{
+    TAgent& agent_;
+
+    typedef typename TAgent::service_type service_type;
+    // DEBT: Need this, and need it for constructor not 'run'
+    //typedef typename moducom::internal::ArgType<decltype(&service_type::run)>::tuple_type event_args;
+
+public:
+    // DEBT: args ignored at this time
+    template <class ...TArgs>
+    EventToken(TAgent& agent, TArgs&&...args) :
+        // DEBT: EventToken doesn't use stop token, but ServiceToken demands one.
+        // using temporary here - but that will cause problems in the future
+        ServiceToken(stop_source().token()),
+        agent_(agent)
+    {
+
+    }
+
+    void start() override
+    {
+        agent_.construct();
+    }
+};
+
 }
 
 class StandaloneStdThreadManager : public agents::Aggregator
@@ -278,6 +306,38 @@ public:
         }
 
         return false;
+    }
+};
+
+class EventManager : public agents::Aggregator
+{
+    typedef agents::Aggregator base_type;
+
+public:
+    EventManager(EnttHelper eh) : base_type(eh)
+    {
+
+    }
+
+    template <class TService, class ...TArgs>
+    auto push(TArgs&&...args)
+    {
+        agents::EnttHelper e(entity.registry, entity.registry.create());
+        typedef agents::Event<TService> agent_type;
+        auto agent = new agent_type(e, std::forward<TArgs>(args)...);
+        base_type::add(*agent);
+        internal::EventToken<agent_type> serviceToken(*agent);
+        return serviceToken;
+    }
+
+    void stop()
+    {
+        for(Agent* agent : agents::Depender::dependsOn())
+        {
+            // TODO: no convenient way to issue agent service's destructor yet
+            // - I'm thinking stop_callback might be an interesting way to do
+            // it
+        }
     }
 };
 

@@ -20,6 +20,7 @@
 
 #include "moducom/stop_token.h"
 #include "moducom/services/agent.h"
+#include "moducom/internal/argtype.h"
 
 namespace moducom { namespace services { namespace agents {
 
@@ -217,8 +218,10 @@ class Base :
 {
     typedef Container<TService> container_base;
 
-protected:
+public:
     typedef TService service_type;
+
+protected:
     typedef service_type& reference;
 
 public:
@@ -398,9 +401,12 @@ auto make_standalone(EnttHelper enttHelper, TArgs&&... args)
 template <class TService>
 class Event : public Base<TService>
 {
-    typedef TService service_type;
     typedef Base<TService> base_type;
 
+public:
+    typedef TService service_type;
+
+private:
     // TODO: Consolidate with AsyncEvent/AsyncEventQueue
     // TODO: Revisit whether we always want to do progress 0-100 per iteration, probably not
     template <class ...TArgs>
@@ -419,6 +425,7 @@ public:
     {
 
     }
+
     template <class ... TArgs>
     void construct(TArgs&&...args)
     {
@@ -529,54 +536,6 @@ public:
     }
 };
 
-// guidance from
-// https://stackoverflow.com/questions/22632236/how-is-possible-to-deduce-function-argument-type-in-c
-// https://stackoverflow.com/questions/29906242/c-deduce-member-function-parameters
-template <class F> struct ArgType;
-
-template <class C, class F> struct ClassArgType;
-
-template <class R, class T>
-struct ArgType<R(*)(T)>
-{
-    //typedef TArgs... type;
-    typedef std::tuple<T> tuple_type;
-};
-
-/*
-template <class C, class R, class T>
-struct ArgType<R(C::*)(T)>
-{
-    //typedef TArgs... type;
-    typedef std::tuple<T> tuple_type;
-}; */
-
-template <class C, class R, class ...TArgs>
-struct ArgType<R(C::*)(TArgs...)>
-{
-    //typedef TArgs... type;
-    typedef std::tuple<TArgs...> tuple_type;
-
-    template <typename F>
-    static R invoke(F&& f, const tuple_type& tuple)
-    {
-        // DEBT: TArgs... should be a ref, const ref or similar
-        std::apply([&](TArgs... args)
-                   {
-                       f(std::forward<TArgs>(args)...);
-                   }, tuple);
-
-    }
-};
-
-
-/*
-template <class R, class ...TArgs>
-struct ArgType<R(*)(TArgs...)>
-{
-    //typedef TArgs... type;
-    typedef std::tuple<TArgs...> tuple_type;
-};*/
 
 }
 
@@ -585,7 +544,7 @@ class AsyncEventQueue : public Base<TService>
 {
     typedef Base<TService> base_type;
     // NOTE: This deduction demands one and only one 'run' method be present
-    typedef typename internal::ArgType<decltype(&TService::run)>::tuple_type event_args;
+    typedef typename moducom::internal::ArgType<decltype(&TService::run)>::tuple_type event_args;
     //typedef std::tuple<TArgs...> event_args;
 
     struct Item

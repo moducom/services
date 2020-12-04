@@ -10,6 +10,8 @@ add_library(${PROJECT_NAME}
         library.cpp library.h
         service.hpp services.h
 
+        include/moducom/internal/argtype.h
+
         include/moducom/semver.h
         include/moducom/portable_endian.h
 
