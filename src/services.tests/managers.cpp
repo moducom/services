@@ -123,6 +123,25 @@ struct ScheduledRemoval : ServiceBase
 };
 
 
+// we do this to test start/stop of Event1 -
+// if things go wrong, constructor doesn't even run - so we need
+// a global
+static int event2_signal = 0;
+
+struct Event2 : ServiceBase
+{
+    Event2()
+    {
+        event2_signal++;
+    }
+
+    ~Event2()
+    {
+        event2_signal++;
+    }
+};
+
+
 TEST_CASE("managers")
 {
     entt::registry registry;
@@ -276,6 +295,16 @@ TEST_CASE("managers")
     {
         managers::EventManager manager(enttHelper);
 
-        auto serviceToken = manager.push<Periodic1<int>>();
+        auto serviceToken = manager.push<Event2>();
+
+        REQUIRE(event2_signal == 0);
+
+        serviceToken.start();
+
+        REQUIRE(event2_signal == 1);
+
+        serviceToken.stop();
+
+        REQUIRE(event2_signal == 2);
     }
 }

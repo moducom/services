@@ -11,17 +11,19 @@ namespace moducom { namespace services { namespace managers {
 
 namespace internal {
 
-class StdThreadServiceToken : public ServiceToken
+class StdThreadServiceToken :
+    public moducom::services::internal::ServiceSignalingStopToken
 {
+    typedef ServiceSignalingStopToken base_type;
 protected:
     std::thread worker;
 
     StdThreadServiceToken(const stop_token& stopToken) :
-        ServiceToken(stopToken)
+        base_type(stopToken)
     {}
 
     StdThreadServiceToken(StdThreadServiceToken&& moveFrom) :
-        ServiceToken(moveFrom.stopToken),
+        base_type(moveFrom.stopToken),
         worker(std::move(moveFrom.worker))
     {
     }
@@ -78,9 +80,6 @@ public:
     // DEBT: args ignored at this time
     template <class ...TArgs>
     EventToken(TAgent& agent, TArgs&&...args) :
-        // DEBT: EventToken doesn't use stop token, but ServiceToken demands one.
-        // using temporary here - but that will cause problems in the future
-        ServiceToken(stop_source().token()),
         agent_(agent)
     {
 
@@ -89,6 +88,11 @@ public:
     void start() override
     {
         agent_.construct();
+    }
+
+    void stop() override
+    {
+        agent_.destruct();
     }
 };
 
