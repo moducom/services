@@ -18,6 +18,7 @@
 #include <tuple>
 #include <utility>
 
+#include "moducom/stop_token.h"
 #include "moducom/services/agent.h"
 
 namespace moducom { namespace services { namespace agents {

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "agents.hpp"
+#include "../../../services.h"
+#include "../../../agents.hpp"
 
 // DEBT: Need to be gentler about this, even though I personally won't be using the global
 // min macro others might
