@@ -18,6 +18,8 @@ protected:
             stopToken(stopToken) {}
 
 public:
+    virtual ~ServiceToken() = default;
+
     virtual void start() = 0;
 };
 
