@@ -433,6 +433,15 @@ public:
         Agent::status(Status::Waiting);
     }
 
+    // DEBT: A bit sloppy stop vs destruct.  May want to bring in start/stop
+    // paradigm more formally so that status event firing feels better
+    void destruct()
+    {
+        Agent::status(Status::Stopping);
+        base_type::destruct();
+        Agent::status(Status::Stopped);
+    }
+
     // remember, run is a gentle misnomer here, it really means "handle event of given args"
     template <class ...TArgs>
     void run(TArgs&&...args)

@@ -146,7 +146,6 @@ TEST_CASE("managers")
 {
     entt::registry registry;
     agents::EnttHelper enttHelper(registry, registry.create());
-    agents::EnttHelper entity2(registry, registry.create());
 
     SECTION("semver")
     {
@@ -293,18 +292,37 @@ TEST_CASE("managers")
     }
     SECTION("event")
     {
-        managers::EventManager manager(enttHelper);
+        entt::registry registry2;
+        agents::EnttHelper entity2(registry2, registry2.create());
+        managers::EventManager manager(entity2);
 
-        auto serviceToken = manager.push<Event2>();
+        SECTION("attempt 1")
+        {
+            auto serviceToken = manager.push<Event2>();
 
-        REQUIRE(event2_signal == 0);
+            REQUIRE(event2_signal == 0);
 
-        serviceToken.start();
+            serviceToken.start();
 
-        REQUIRE(event2_signal == 1);
+            REQUIRE(event2_signal == 1);
 
-        serviceToken.stop();
+            serviceToken.stop();
 
-        REQUIRE(event2_signal == 2);
+            REQUIRE(event2_signal == 2);
+        }
+        SECTION("exp")
+        {
+            auto serviceToken = manager.push_exp<Event2>();
+
+            REQUIRE(event2_signal == 2);
+
+            serviceToken->start();
+
+            REQUIRE(event2_signal == 3);
+
+            serviceToken->stop();
+
+            REQUIRE(event2_signal == 4);
+        }
     }
 }

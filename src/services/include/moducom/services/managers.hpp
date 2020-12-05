@@ -96,6 +96,52 @@ public:
     }
 };
 
+
+template <class TAgent>
+class EventTokenExp : public ServiceToken
+{
+    TAgent agent_;
+
+    typedef typename TAgent::service_type service_type;
+    // DEBT: Need this, and need it for constructor not 'run'
+    //typedef typename moducom::internal::ArgType<decltype(&service_type::run)>::tuple_type event_args;
+
+    inline void checkStatusAndStop()
+    {
+        Status status = agent_.status();
+
+        if(status != Status::Stopping &&
+            status != Status::Stopped)
+        {
+            agent_.destruct();
+        }
+    }
+
+public:
+    // DEBT: args ignored at this time
+    template <class ...TArgs>
+    EventTokenExp(moducom::services::agents::EnttHelper eh, TArgs&&...args) :
+            agent_(eh)
+    {
+
+    }
+
+    ~EventTokenExp()
+    {
+        checkStatusAndStop();
+    }
+
+    void start() override
+    {
+        agent_.construct();
+    }
+
+    void stop() override
+    {
+        checkStatusAndStop();
+    }
+};
+
 }
 
 class StandaloneStdThreadManager : public agents::Aggregator
@@ -333,6 +379,21 @@ public:
         internal::EventToken<agent_type> serviceToken(*agent);
         return serviceToken;
     }
+
+    // experimenting with holding on to token in registry, and having token actually
+    // be container for agent as well
+    template <class TService, class ...TArgs>
+    auto push_exp(TArgs&&...args)
+    {
+        agents::EnttHelper e(entity.registry, entity.registry.create());
+        typedef agents::Event<TService> agent_type;
+        //auto agent = new agent_type(e, std::forward<TArgs>(args)...);
+        //base_type::add(*agent);
+        auto* serviceToken = new internal::EventTokenExp<agent_type>(e);
+        e.registry.emplace<std::unique_ptr<ServiceToken> >(e.entity, serviceToken);
+        return serviceToken;
+    }
+
 
     void stop()
     {
