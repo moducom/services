@@ -40,12 +40,13 @@ class Transfer : public TransferBase
 {
     friend class TransferAgent;
 
-    TTransferImpl impl;
-
     void callback();
     static void transferCallback(libusb_transfer* transfer);
 
 public:
+    // DEBT: impl out here not ideal
+    TTransferImpl impl;
+
     Transfer(libusb::DeviceHandle deviceHandle,
              uint8_t endpoint, int length, unsigned timeout = 0)
     {
