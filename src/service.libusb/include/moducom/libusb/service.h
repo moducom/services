@@ -8,18 +8,11 @@
 // libusb::Transfer and friends
 namespace moducom { namespace libusb { namespace services {
 
-// Useful for repetitive transfers
-class Transfer
+class TransferBase
 {
+    // DEBT: Want this protected, but impl has a hard time seeing in in that case
+public:
     libusb::Transfer transfer;
-
-    friend class TransferAgent;
-
-    entt::sigh<void (libusb::Transfer&)> sighCompleted;
-    entt::sigh<void (libusb::Transfer&)> sighStatus;
-
-    void callback();
-    static void transferCallback(libusb_transfer* transfer);
 
     enum Flags
     {
@@ -32,6 +25,25 @@ class Transfer
 
     void alloc();
     void free();
+
+public:
+    void start(unsigned char* external = nullptr);
+    void stop()
+    {
+        transfer.cancel();
+    }
+};
+
+// Useful for repetitive transfers
+template <class TTransferImpl>
+class Transfer : public TransferBase
+{
+    friend class TransferAgent;
+
+    TTransferImpl impl;
+
+    void callback();
+    static void transferCallback(libusb_transfer* transfer);
 
 public:
     Transfer(libusb::DeviceHandle deviceHandle,
@@ -53,12 +65,28 @@ public:
         start(external);
     }
 
-    void start(unsigned char* external = nullptr);
-    void stop()
-    {
-        transfer.cancel();
-    }
 };
+
+namespace internal {
+
+struct TransferEnttImpl
+{
+    entt::sigh<void (libusb::Transfer&)> sighCompleted;
+    entt::sigh<void (libusb::Transfer&)> sighStatus;
+
+public:
+    entt::sink<void (libusb::Transfer&)> sinkCompleted;
+    entt::sink<void (libusb::Transfer&)> sinkStatus;
+
+    TransferEnttImpl() :
+        sinkCompleted{sighCompleted},
+        sinkStatus{sighStatus}
+    {}
+
+    void callback(TransferBase& parent, libusb_transfer* t);
+};
+
+}
 
 class Device
 {

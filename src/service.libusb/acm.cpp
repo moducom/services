@@ -211,7 +211,7 @@ void LibUsbTransfer::_transferCallback(libusb_transfer* transfer)
 
 namespace moducom { namespace libusb { namespace services {
 
-inline void Transfer::alloc()
+inline void TransferBase::alloc()
 {
     libusb_transfer* t = transfer;
 
@@ -223,7 +223,7 @@ inline void Transfer::alloc()
         t->buffer = (unsigned char*) malloc(transfer.length());
 }
 
-void Transfer::free()
+void TransferBase::free()
 {
     libusb_transfer* t = transfer;
 
@@ -233,38 +233,28 @@ void Transfer::free()
         ::free(t->buffer);
 }
 
-inline void Transfer::callback()
-{
-    libusb_transfer* t = transfer;
 
+void internal::TransferEnttImpl::callback(TransferBase& parent, libusb_transfer* t)
+{
     switch(t->status)
     {
         case LIBUSB_TRANSFER_COMPLETED:
-            sighCompleted.publish(transfer);
-            if(!flags[OneShot])
+            sighCompleted.publish(parent.transfer);
+            if(!parent.flags[TransferBase::OneShot])
                 // DEBT: Need to check return value of this and do something if it fails
-                transfer.submit();
+                parent.transfer.submit();
             break;
 
         case LIBUSB_TRANSFER_CANCELLED:
-            free();
+            parent.free();
 
         default:
-            sighStatus.publish(transfer);
+            sighStatus.publish(parent.transfer);
             break;
     }
 }
 
-void Transfer::transferCallback(libusb_transfer* transfer)
-{
-    auto _this = (Transfer*)transfer->user_data;
-
-    // TODO: Assert that incoming 'transfer' is same as _this->transfer
-    _this->callback();
-}
-
-
-void Transfer::start(unsigned char* external)
+void TransferBase::start(unsigned char* external)
 {
     libusb_transfer* t = transfer;
 

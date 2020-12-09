@@ -12,6 +12,7 @@ endif()
 add_library(${PROJECT_NAME}
         acm.cpp acm.h
         include/moducom/libusb/service.h
+        include/moducom/libusb/service.hpp
         usb.cpp usb.h
         wrapper.h)
 
