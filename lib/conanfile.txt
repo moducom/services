@@ -4,4 +4,4 @@ entt/3.5.2
 libusb/1.0.23
 
 [generators]
-cmake
+cmake_find_package

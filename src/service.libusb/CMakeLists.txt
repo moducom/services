@@ -22,7 +22,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 target_link_libraries(${PROJECT_NAME}
-        CONAN_PKG::entt CONAN_PKG::libusb
+        EnTT libusb::libusb
         Threads::Threads
         services
         )
