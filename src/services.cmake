@@ -9,4 +9,4 @@ set(CMAKE_MODULE_PATH ${ROOT_DIR}/lib/conan)
 
 find_package(Threads REQUIRED)
 find_package(libusb REQUIRED)
-find_package(EnTT)
+find_package(EnTT REQUIRED)

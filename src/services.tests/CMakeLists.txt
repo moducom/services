@@ -17,10 +17,10 @@ add_executable(services_tests
         usb.cpp
         )
 
-find_package(catch2 REQUIRED)
+find_package(Catch2 REQUIRED)
 
 target_link_libraries(services_tests
-        EnTT catch2::catch2
+        EnTT::EnTT Catch2::Catch2
         Threads::Threads
         services
         service-libusb)

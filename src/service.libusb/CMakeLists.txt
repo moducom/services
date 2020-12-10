@@ -18,11 +18,12 @@ add_library(${PROJECT_NAME}
 
 # DEBT: So damn sloppy
 #target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
-target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR}/src)
+
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
 target_link_libraries(${PROJECT_NAME}
-        EnTT libusb::libusb
+        EnTT::EnTT libusb::libusb
         Threads::Threads
         services
         )
