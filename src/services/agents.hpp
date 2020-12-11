@@ -605,7 +605,13 @@ class AsyncEventQueue : public Base<TService>
     /// \param stopToken
     /// @details Does a semi-spin wait (500ms per iteration) so as to check for 'sleep' and stop
     /// condition
-    void worker(const stop_token& stopToken)
+    void worker(
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+            stop_token stopToken
+#else
+            const stop_token& stopToken
+#endif
+            )
     {
         using namespace std::chrono_literals;
         int counter = 10;
@@ -703,7 +709,12 @@ public:
 
             // future destructor will block, if necessary while worker finishes up
             workerFuture = std::async(std::launch::async, &AsyncEventQueue::worker, this,
-                                      std::ref(stopSource.token()));
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+                                      stopSource.token()
+#else
+                                      std::ref(stopSource.token())
+#endif
+                                      );
         }
     }
 };

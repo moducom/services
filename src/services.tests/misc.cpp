@@ -25,6 +25,11 @@ static void requireSeven(int value)
 
 static void methodWithReference(int&) {}
 
+void async2()
+{
+    std::clog << "hi2u from async2" << std::endl;
+}
+
 
 TEST_CASE("misc")
 {
@@ -38,6 +43,10 @@ TEST_CASE("misc")
     SECTION("stop_source")
     {
         stop_source s;
+
+        SECTION("stop_callback")
+        {
+        }
     }
     SECTION("Agent")
     {
