@@ -552,15 +552,23 @@ struct QueuedMessageFactory
     // NOTE: This deduction demands one and only one 'run' method be present
     typedef typename moducom::internal::ArgType<decltype(&TService::run)>::tuple_remove_reference_type event_args;
 
+    // DEBT: Not quite a factory, being that no create() is called since 'emplace' likes to
+    // call constructor directly.  Probably close enough though for transforms down the line
     struct message_type
     {
-        bool stop_signal;
+        const bool stop_signal;
         event_args args;
 
         message_type(bool stop_signal, event_args args = event_args()) :
                 stop_signal(stop_signal), args(args)
         {}
     };
+
+    // DEBT: Doesn't belong in a factory
+    static bool stop_signaled(const message_type& message)
+    {
+        return message.stop_signal;
+    }
 };
 
 
@@ -575,20 +583,18 @@ class AsyncEventQueue : public Base<TService>
     typedef typename message_factory_type::message_type message_type;
     typedef typename message_factory_type::event_args event_args;
 
-    typedef message_type Item;
-
-    internal::BlockingQueue<Item> queue;
+    internal::BlockingQueue<message_type> queue;
 
     // DEBT: I think we can do this with just the future variable
     bool workerRunning = false;
     std::mutex workerRunningMutex;
 
     // Leaning heavily on RVO
-    Item pop()
+    message_type pop()
     {
         auto lock = queue.lock_guard();
 
-        Item item = queue.q().front();
+        message_type item = queue.q().front();
 
         queue.q().pop();
 
@@ -613,9 +619,16 @@ class AsyncEventQueue : public Base<TService>
         {
             workerRunningMutex.unlock();
 
-            Item item = pop();
+            // DEBT: Since message_type typically removes references, this may be a kind of
+            // fat stack operation.  We make the copy so that we can totally atomically remove
+            // the item at once, but we could be clever and:
+            // - mutex 'front'
+            // - call service
+            // - mutex 'pop'
+            // in which case a copy is not necessary
+            message_type item = pop();
 
-            if(item.stop_signal)    break;
+            if(message_factory_type::stop_signaled(item))    break;
 
             // DEBT: Don't like auto here, but getting tuple's TArgs is quite difficult
             std::apply([&](const auto&... args)
@@ -647,8 +660,8 @@ public:
             auto lg = queue.lock_guard();
             while(!queue.q().empty())
             {
-                Item& item = queue.q().front();
-                if(!item.stop_signal)
+                const message_type& item = queue.q().front();
+                if(!message_factory_type::stop_signaled(item))
                 {
                     // TODO: note non-stop-signal lingering events
                 }
