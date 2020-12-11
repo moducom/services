@@ -30,9 +30,7 @@ class stop_token
 
     friend class stop_source;
 
-#if !FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class T>
-#endif
     friend class stop_callback;
 
 public:
@@ -75,9 +73,7 @@ class stop_source
     std::atomic<bool> stop_requested_ = false;
     entt::sigh<void ()> sigh_stop_requested;
 
-#if !FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class T>
-#endif
     friend class stop_callback;
 
 public:
@@ -124,16 +120,13 @@ inline bool stop_token::stop_requested() const noexcept
 }
 #endif
 
-#if !FEATURE_MC_SERVICES_ENTT_STOPTOKEN
 template <class Callback>
-#endif
 class stop_callback
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     entt::sink<void ()> sink_stop_requested;
 
-    // DEBT: Not ideal, a fair bit of runtime overhead for that
-    std::function<void()> callback;
+    Callback callback;
 
     void enttFriendlyCallback()
     {
@@ -142,14 +135,13 @@ class stop_callback
 #endif
 
 public:
-#if !FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     typedef Callback callback_type;
-#endif
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
         sink_stop_requested{st.stop_source_->sigh_stop_requested},
+        // DEBT: Unknown if this does a proper forward, but I believe it does
         callback{cb}
     {
         sink_stop_requested.connect<&stop_callback::enttFriendlyCallback>(this);
@@ -161,5 +153,15 @@ public:
     }
 #endif
 };
+
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+#ifdef __cpp_deduction_guides
+template<class Callback>
+stop_callback(stop_token, Callback) -> stop_callback<Callback>;
+#else
+// TODO: Make a make_stop_callback for C++14 compat.  EnTT only goes back to C++14
+#endif
+#endif
+
 
 }}
