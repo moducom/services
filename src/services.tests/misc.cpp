@@ -23,6 +23,9 @@ static void requireSeven(int value)
     REQUIRE(value == 7);
 }
 
+static void methodWithReference(int&) {}
+
+
 TEST_CASE("misc")
 {
     entt::registry registry;
@@ -106,25 +109,40 @@ TEST_CASE("misc")
     }
     SECTION("internal")
     {
-        SECTION("ArgType 1")
+        SECTION("ArgType")
         {
-            typedef moducom::internal::ArgType<decltype(&Event1::run)> argtype;
-            typedef argtype::tuple_type test_type;
+            SECTION("ArgType 1")
+            {
+                typedef moducom::internal::ArgType<decltype(&Event1::run)> argtype;
+                typedef argtype::tuple_type test_type;
 
-            test_type tuple;
+                test_type tuple;
 
-            std::get<0>(tuple) = 7;
+                std::get<0>(tuple) = 7;
 
-            argtype::invoke(requireSeven, tuple);
-        }
-        SECTION("ArgType 2")
-        {
-            moducom::internal::ArgType<decltype(&Listener1::onStatusChanged)>::tuple_type tuple;
+                argtype::invoke(requireSeven, tuple);
+            }
+            SECTION("ArgType 2")
+            {
+                moducom::internal::ArgType<decltype(&Listener1::onStatusChanged)>::tuple_type tuple;
 
-            auto& item1 = std::get<0>(tuple);
-            auto& item2 = std::get<1>(tuple);
+                auto& item1 = std::get<0>(tuple);
+                auto& item2 = std::get<1>(tuple);
 
-            REQUIRE(item2 == Status::Unstarted);
+                REQUIRE(item2 == Status::Unstarted);
+            }
+            SECTION("reference tests")
+            {
+                typedef moducom::internal::ArgType<decltype(&methodWithReference)>::tuple_type tuple_type;
+
+                REQUIRE(std::is_reference_v<std::tuple_element<0, tuple_type>::type>);
+            }
+            SECTION("reference_removed tests")
+            {
+                typedef moducom::internal::ArgType<decltype(&methodWithReference)>::tuple_remove_reference_type tuple_type;
+
+                REQUIRE(!std::is_reference_v<std::tuple_element<0, tuple_type>::type>);
+            }
         }
     }
 }

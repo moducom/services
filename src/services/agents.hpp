@@ -545,16 +545,12 @@ public:
     }
 };
 
-// https://stackoverflow.com/questions/12742877/remove-reference-from-stdtuple-members
-template <typename... T>
-using tuple_with_removed_refs = std::tuple<typename std::remove_reference<T>::type...>;
-
 // since queued  messages almost always want a copy of inputs not a ref, remove references
 template <class TService>
 struct QueuedMessageFactory
 {
     // NOTE: This deduction demands one and only one 'run' method be present
-    typedef typename moducom::internal::ArgType<decltype(&TService::run)>::tuple_type event_args;
+    typedef typename moducom::internal::ArgType<decltype(&TService::run)>::tuple_remove_reference_type event_args;
 
     struct message_type
     {
