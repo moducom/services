@@ -4,6 +4,8 @@
 #include <service.libusb/usb.h>
 #include <service.libusb/acm.h>
 
+#include <moducom/libusb/service.hpp>
+
 #include <iostream>
 #include <iomanip>
 
@@ -209,5 +211,15 @@ TEST_CASE("usb")
 #endif
 
         libusb2.destruct();
+    }
+    SECTION("Transfer semi-service")
+    {
+        // DEBT: Gonna get limited mileage out of a null-initialized device handle
+        moducom::libusb::DeviceHandle deviceHandle(nullptr);
+
+        // DEBT: Lucky that libusb 1.0.23 doesn't crash on a null device handle here.  I'm
+        // sure other scenarios will
+        moducom::libusb::services::Transfer<
+                moducom::libusb::services::internal::TransferEnttImpl> dummy(deviceHandle, 0, 256);
     }
 }

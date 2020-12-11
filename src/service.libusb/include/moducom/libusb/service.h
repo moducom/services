@@ -84,7 +84,8 @@ public:
         sinkStatus{sighStatus}
     {}
 
-    void callback(TransferBase& parent, libusb_transfer* t);
+    void onCompleted(TransferBase& parent, libusb_transfer* t);
+    void onStatus(TransferBase& parent, libusb_transfer* t);
 };
 
 }

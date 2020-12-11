@@ -234,17 +234,10 @@ void TransferBase::free()
 }
 
 
-void internal::TransferEnttImpl::callback(TransferBase& parent, libusb_transfer* t)
+void internal::TransferEnttImpl::onStatus(TransferBase& parent, libusb_transfer* t)
 {
     switch(t->status)
     {
-        case LIBUSB_TRANSFER_COMPLETED:
-            sighCompleted.publish(parent.transfer);
-            if(!parent.flags[TransferBase::OneShot])
-                // DEBT: Need to check return value of this and do something if it fails
-                parent.transfer.submit();
-            break;
-
         case LIBUSB_TRANSFER_CANCELLED:
             parent.free();
 
@@ -252,6 +245,15 @@ void internal::TransferEnttImpl::callback(TransferBase& parent, libusb_transfer*
             sighStatus.publish(parent.transfer);
             break;
     }
+}
+
+
+void internal::TransferEnttImpl::onCompleted(TransferBase& parent, libusb_transfer* t)
+{
+    sighCompleted.publish(parent.transfer);
+    if(!parent.flags[TransferBase::OneShot])
+        // DEBT: Need to check return value of this and do something if it fails
+        parent.transfer.submit();
 }
 
 void TransferBase::start(unsigned char* external)
