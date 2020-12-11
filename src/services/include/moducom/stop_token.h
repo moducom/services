@@ -60,7 +60,7 @@ class stop_source
     friend class stop_callback;
 
 public:
-    const bool stop_requested() const noexcept
+    [[nodiscard]] const bool stop_requested() const noexcept
     {
         return stop_requested_;
     }
@@ -110,6 +110,13 @@ class stop_callback
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     entt::sink<void ()> sink_stop_requested;
+
+    std::function<void()> callback;
+
+    void enttFriendlyCallback()
+    {
+        callback();
+    }
 #endif
 
 public:
@@ -119,11 +126,17 @@ public:
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     // FIX: Not ready for primetime
-    template <auto C>
-    stop_callback(stop_token st) :
-        sink_stop_requested{st.stop_source_.sigh_stop_requested}
+    template <class C>
+    stop_callback(stop_token st, C&& cb) :
+        sink_stop_requested{st.stop_source_.sigh_stop_requested},
+        callback{cb}
     {
-        sink_stop_requested.connect<C>();
+        sink_stop_requested.connect<&stop_callback::enttFriendlyCallback>(this);
+    }
+
+    ~stop_callback()
+    {
+        sink_stop_requested.disconnect<&stop_callback::enttFriendlyCallback>(this);
     }
 #endif
 };

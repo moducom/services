@@ -678,7 +678,7 @@ public:
 
     void stop()
     {
-        stopSource.stop_requested();
+        stopSource.request_stop();
         queue.emplace(true);
     }
 

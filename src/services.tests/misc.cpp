@@ -46,6 +46,16 @@ TEST_CASE("misc")
 
         SECTION("stop_callback")
         {
+            bool called_back = false;
+
+            stop_callback c(s.token(), [&]
+            {
+                called_back = true;
+            });
+
+            s.request_stop();
+
+            REQUIRE(called_back);
         }
     }
     SECTION("Agent")
