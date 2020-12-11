@@ -19,10 +19,10 @@ class stop_source;
 class stop_token
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    stop_source& stop_source_;
+    stop_source* stop_source_;
 
     stop_token(stop_source& source) :
-        stop_source_(source) {}
+        stop_source_(&source) {}
 #else
     //bool stop_requested_ = false;
     std::atomic<bool> stop_requested_ = false;
@@ -36,6 +36,27 @@ class stop_token
     friend class stop_callback;
 
 public:
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+    stop_token() : stop_source_{nullptr} {}
+
+    stop_token(const stop_token& copy_from) :
+        stop_source_(copy_from.stop_source_)
+    {
+
+    }
+
+    stop_token(stop_token&& move_from) :
+        stop_source_(move_from.stop_source_)
+    {
+        move_from.stop_source_ = nullptr;
+    }
+
+    [[nodiscard]] bool stop_possible() const noexcept
+    {
+        return stop_source_ != nullptr;
+    }
+#endif
+
     [[nodiscard]] bool stop_requested() const noexcept
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     ;
@@ -99,7 +120,7 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
 inline bool stop_token::stop_requested() const noexcept
 {
-    return stop_source_.stop_requested();
+    return stop_possible() && stop_source_->stop_requested();
 }
 #endif
 
@@ -111,6 +132,7 @@ class stop_callback
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     entt::sink<void ()> sink_stop_requested;
 
+    // DEBT: Not ideal, a fair bit of runtime overhead for that
     std::function<void()> callback;
 
     void enttFriendlyCallback()
@@ -125,10 +147,9 @@ public:
 #endif
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    // FIX: Not ready for primetime
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        sink_stop_requested{st.stop_source_.sigh_stop_requested},
+        sink_stop_requested{st.stop_source_->sigh_stop_requested},
         callback{cb}
     {
         sink_stop_requested.connect<&stop_callback::enttFriendlyCallback>(this);
