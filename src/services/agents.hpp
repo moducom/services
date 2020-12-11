@@ -545,34 +545,59 @@ public:
     }
 };
 
+// https://stackoverflow.com/questions/12742877/remove-reference-from-stdtuple-members
+template <typename... T>
+using tuple_with_removed_refs = std::tuple<typename std::remove_reference<T>::type...>;
 
-}
-
-template <class TService> //, class ...TArgs>
-class AsyncEventQueue : public Base<TService>
+// since queued  messages almost always want a copy of inputs not a ref, remove references
+template <class TService>
+struct QueuedMessageFactory
 {
-    typedef Base<TService> base_type;
     // NOTE: This deduction demands one and only one 'run' method be present
     typedef typename moducom::internal::ArgType<decltype(&TService::run)>::tuple_type event_args;
-    //typedef std::tuple<TArgs...> event_args;
 
-    struct Item
+    struct message_type
     {
         bool stop_signal;
         event_args args;
 
-        Item() {}
-
-        Item(bool stop_signal, event_args args = event_args()) :
-            stop_signal(stop_signal), args(args)
+        message_type(bool stop_signal, event_args args = event_args()) :
+                stop_signal(stop_signal), args(args)
         {}
     };
+};
+
+
+}
+
+template <class TService,
+        class TMessageFactory = internal::QueuedMessageFactory<TService> >
+class AsyncEventQueue : public Base<TService>
+{
+    typedef Base<TService> base_type;
+    typedef TMessageFactory message_factory_type;
+    typedef typename message_factory_type::message_type message_type;
+    typedef typename message_factory_type::event_args event_args;
+
+    typedef message_type Item;
 
     internal::BlockingQueue<Item> queue;
 
     // DEBT: I think we can do this with just the future variable
     bool workerRunning = false;
     std::mutex workerRunningMutex;
+
+    // Leaning heavily on RVO
+    Item pop()
+    {
+        auto lock = queue.lock_guard();
+
+        Item item = queue.q().front();
+
+        queue.q().pop();
+
+        return item;
+    }
 
     ///
     /// \param stopToken
@@ -592,14 +617,7 @@ class AsyncEventQueue : public Base<TService>
         {
             workerRunningMutex.unlock();
 
-            Item item;
-
-            {
-                auto lock = queue.lock_guard();
-
-                item = queue.q().front();
-                queue.q().pop();
-            }
+            Item item = pop();
 
             if(item.stop_signal)    break;
 
