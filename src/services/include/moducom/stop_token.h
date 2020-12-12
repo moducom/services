@@ -3,6 +3,7 @@
 #include <atomic>
 
 #define FEATURE_MC_SERVICES_ENTT_STOPTOKEN 1
+#define FEATURE_MC_SERVICES_ENTT_STOPTOKEN_EMITTER 0
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
 #include <entt/signal/sigh.hpp>
@@ -21,8 +22,8 @@ class stop_token
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     stop_source* stop_source_;
 
-    stop_token(stop_source& source) :
-        stop_source_(&source) {}
+    stop_token(stop_source* source) :
+        stop_source_(source) {}
 #else
     //bool stop_requested_ = false;
     std::atomic<bool> stop_requested_ = false;
@@ -70,8 +71,17 @@ public:
 class stop_source
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+    struct event
+    {
+        unsigned stop_requested : 1;
+        unsigned shutdown : 1;
+    };
     std::atomic<bool> stop_requested_ = false;
-    entt::sigh<void ()> sigh_stop_requested;
+    entt::sigh<void (event)> sigh;
+
+    // NOTE: Need this at stop source so that when source leaves scope it can notify tokens it's gone
+    // otherwise we'd have to use a shared_ptr
+    entt::sink<void (event)> sink{sigh};
 
     template <class T>
     friend class stop_callback;
@@ -85,14 +95,14 @@ public:
     bool request_stop() noexcept
     {
         stop_requested_ = true;
-        sigh_stop_requested.publish();
+        sigh.publish(event{1, 0});
         return true;
     }
 
     // DEBT: Should be a const, but non-const needed for sigh to work
     [[nodiscard]] stop_token token() noexcept
     {
-        return stop_token(*this);
+        return stop_token(this);
     }
 #else
     stop_token token_;
@@ -124,13 +134,18 @@ template <class Callback>
 class stop_callback
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    entt::sink<void ()> sink_stop_requested;
-
+    entt::connection c;
     Callback callback;
 
-    void enttFriendlyCallback()
+    void enttFriendlyCallback(stop_source::event e)
     {
-        callback();
+        if(e.stop_requested)
+            callback();
+
+        // DEBT: Probably not needed, doing a connection release here, but this way
+        // we're extra safe that we don't release against a no-longer-existing sink
+        if(e.shutdown)
+            c.release();
     }
 #endif
 
@@ -140,16 +155,15 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        sink_stop_requested{st.stop_source_->sigh_stop_requested},
         // DEBT: Unknown if this does a proper forward, but I believe it does
         callback{cb}
     {
-        sink_stop_requested.connect<&stop_callback::enttFriendlyCallback>(this);
+        c = st.stop_source_->sink.connect<&stop_callback::enttFriendlyCallback>(this);
     }
 
     ~stop_callback()
     {
-        sink_stop_requested.disconnect<&stop_callback::enttFriendlyCallback>(this);
+        c.release();
     }
 #endif
 };
