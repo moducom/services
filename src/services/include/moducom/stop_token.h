@@ -29,7 +29,6 @@ struct stop_state
 class stop_token
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    stop_source* stop_source_;
     std::weak_ptr<internal::stop_state> stop_state_;
 
     stop_token(stop_source& source);
@@ -45,7 +44,7 @@ class stop_token
 
 public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    stop_token() : stop_source_(nullptr) {}
+    stop_token() = default;
 
     stop_token(const stop_token& copy_from) :
         stop_state_(copy_from.stop_state_)
@@ -58,10 +57,7 @@ public:
     {
     }
 
-    [[nodiscard]] bool stop_possible() const noexcept
-    {
-        return !stop_state_.expired();
-    }
+    [[nodiscard]] bool stop_possible() const noexcept;
 #endif
 
     [[nodiscard]] bool stop_requested() const noexcept
@@ -117,6 +113,12 @@ public:
     {
         return stop_token(*this);
     }
+
+    // Reflects that edge cases where a stop_source *without* stop state that suddenly
+    // gets one later is not fully - since our current approach can't easily indicate
+    // to stop_tokens that's the case.  We'd have to allocate stop_state with an empty
+    // owner for that.  Not too hard really
+    bool stop_possible() const noexcept { return true; }
 #else
     stop_token token_;
 
@@ -138,10 +140,21 @@ public:
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
 inline stop_token::stop_token(stop_source& source) :
-    stop_source_(&source),
     stop_state_(source.stop_state_)
 {
 
+}
+
+
+inline bool stop_token::stop_possible() const noexcept
+{
+    if (stop_state_.expired()) return false;
+
+    // DEBT: Not MT safe
+    std::shared_ptr<internal::stop_state> ss = stop_state_.lock();
+    stop_source* source = ss->owner;
+
+    return source != nullptr && source->stop_possible();
 }
 
 inline bool stop_token::stop_requested() const noexcept
@@ -173,7 +186,9 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        sink_stop_requested{st.stop_source_->sigh_stop_requested},
+        // DEBT: Not only not MT safe but also will just plan crash if stop_source has gone
+        // out of scope
+        sink_stop_requested{st.stop_state_.lock()->owner->sigh_stop_requested},
         // DEBT: Unknown if this does a proper forward, but I believe it does
         callback{cb}
     {
