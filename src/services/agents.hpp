@@ -370,7 +370,13 @@ public:
                    }, ctor_args);
     }
 
-    void worker(const stop_token& token)
+    void worker(
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+            stop_token token
+#else
+            const stop_token& token
+#endif
+            )
     {
         // DEBT: Would prefer the pass-function-as-template-parameter flavor and
         // completely consolidate construct() call down into Worker class.  Proved to
