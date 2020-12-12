@@ -20,6 +20,7 @@ namespace internal {
 
 struct stop_state
 {
+    entt::sigh<void ()> sigh_stop_requested;
     std::atomic<bool> stop_requested_ = false;
     stop_source* owner;
 };
@@ -81,8 +82,6 @@ class stop_source
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     std::shared_ptr<stop_state> stop_state_;
 
-    entt::sigh<void ()> sigh_stop_requested;
-
     template <class T>
     friend class stop_callback;
 
@@ -108,7 +107,7 @@ public:
     bool request_stop() noexcept
     {
         stop_state_->stop_requested_ = true;
-        sigh_stop_requested.publish();
+        stop_state_->sigh_stop_requested.publish();
         return true;
     }
 
@@ -174,6 +173,9 @@ template <class Callback>
 class stop_callback
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+    // Keeps stop_state_ alive so that disconnect has something to disconnect from.  If stop_state
+    // is already gone, weak_ptr's lock behavior creates a brand new stop_state, which is sufficient
+    std::shared_ptr<internal::stop_state> stop_state_;
     entt::sink<void ()> sink_stop_requested;
 
     Callback callback;
@@ -190,9 +192,9 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        // DEBT: Not only not MT safe but also will just plan crash if stop_source has gone
-        // out of scope
-        sink_stop_requested{st.stop_state_.lock()->owner->sigh_stop_requested},
+        stop_state_(st.stop_state_.lock()),
+        // DEBT: Not MT safe
+        sink_stop_requested{stop_state_->sigh_stop_requested},
         // DEBT: Unknown if this does a proper forward, but I believe it does
         callback{cb}
     {
