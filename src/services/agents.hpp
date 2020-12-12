@@ -385,10 +385,21 @@ public:
         base_type::worker_after_construction(token);
     }
 
-    std::thread run(const stop_token& token)
+    std::thread run(
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+            stop_token token
+#else
+            const stop_token& token
+#endif
+            )
     {
         base_type::status(Status::Starting);
-        std::thread thread(&this_type::worker, this, std::ref(token));
+        std::thread thread(&this_type::worker, this,
+#if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+                           token);
+#else
+                           std::ref(token));
+#endif
         return thread;
     }
 };

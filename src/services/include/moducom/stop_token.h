@@ -192,7 +192,7 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        stop_state_(st.stop_state_.),
+        stop_state_(st.stop_state_),
         // DEBT: Not MT safe
         sink_stop_requested{stop_state_.lock()->sigh_stop_requested},
         // DEBT: Unknown if this does a proper forward, but I believe it does
