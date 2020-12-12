@@ -173,9 +173,11 @@ template <class Callback>
 class stop_callback
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+    using stop_state = internal::stop_state;
+
     // Keeps stop_state_ alive so that disconnect has something to disconnect from.  If stop_state
     // is already gone, weak_ptr's lock behavior creates a brand new stop_state, which is sufficient
-    std::weak_ptr<internal::stop_state> stop_state_;
+    std::weak_ptr<stop_state> stop_state_;
     entt::sink<void ()> sink_stop_requested;
 
     Callback callback;
