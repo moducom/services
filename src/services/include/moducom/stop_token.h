@@ -16,13 +16,23 @@ namespace moducom { namespace services {
 
 class stop_source;
 
+namespace internal {
+
+struct stop_state
+{
+    std::atomic<bool> stop_requested_ = false;
+    stop_source* owner;
+};
+
+}
+
 class stop_token
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     stop_source* stop_source_;
+    std::weak_ptr<internal::stop_state> stop_state_;
 
-    stop_token(stop_source& source) :
-        stop_source_(&source) {}
+    stop_token(stop_source& source);
 #else
     //bool stop_requested_ = false;
     std::atomic<bool> stop_requested_ = false;
@@ -35,23 +45,22 @@ class stop_token
 
 public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    stop_token() : stop_source_{nullptr} {}
+    stop_token() : stop_source_(nullptr) {}
 
     stop_token(const stop_token& copy_from) :
-        stop_source_(copy_from.stop_source_)
+        stop_state_(copy_from.stop_state_)
     {
 
     }
 
     stop_token(stop_token&& move_from) :
-        stop_source_(move_from.stop_source_)
+        stop_state_(std::move(move_from.stop_state_))
     {
-        move_from.stop_source_ = nullptr;
     }
 
     [[nodiscard]] bool stop_possible() const noexcept
     {
-        return stop_source_ != nullptr;
+        return !stop_state_.expired();
     }
 #endif
 
@@ -70,21 +79,35 @@ public:
 class stop_source
 {
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    std::atomic<bool> stop_requested_ = false;
+    std::shared_ptr<internal::stop_state> stop_state_;
+
     entt::sigh<void ()> sigh_stop_requested;
 
     template <class T>
     friend class stop_callback;
 
+    friend class stop_token;
+
 public:
+    stop_source() :
+        stop_state_(new internal::stop_state())
+    {
+        stop_state_->owner = this;
+    }
+
+    ~stop_source()
+    {
+        stop_state_->owner = nullptr;
+    }
+
     [[nodiscard]] const bool stop_requested() const noexcept
     {
-        return stop_requested_;
+        return stop_state_->stop_requested_;
     }
 
     bool request_stop() noexcept
     {
-        stop_requested_ = true;
+        stop_state_->stop_requested_ = true;
         sigh_stop_requested.publish();
         return true;
     }
@@ -114,9 +137,19 @@ public:
 };
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+inline stop_token::stop_token(stop_source& source) :
+    stop_source_(&source),
+    stop_state_(source.stop_state_)
+{
+
+}
+
 inline bool stop_token::stop_requested() const noexcept
 {
-    return stop_possible() && stop_source_->stop_requested();
+    // DEBT: Even though stop_requested_ is atomic, the .lock portion isn't so
+    // we may hit MT issues here.  For that matter that && between the two isn't
+    // atomic/MT safe either
+    return stop_possible() && stop_state_.lock()->stop_requested_;
 }
 #endif
 
