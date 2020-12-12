@@ -175,7 +175,7 @@ class stop_callback
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     // Keeps stop_state_ alive so that disconnect has something to disconnect from.  If stop_state
     // is already gone, weak_ptr's lock behavior creates a brand new stop_state, which is sufficient
-    std::shared_ptr<internal::stop_state> stop_state_;
+    std::weak_ptr<internal::stop_state> stop_state_;
     entt::sink<void ()> sink_stop_requested;
 
     Callback callback;
@@ -192,18 +192,23 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        stop_state_(st.stop_state_.lock()),
+        stop_state_(st.stop_state_.),
         // DEBT: Not MT safe
-        sink_stop_requested{stop_state_->sigh_stop_requested},
+        sink_stop_requested{stop_state_.lock()->sigh_stop_requested},
         // DEBT: Unknown if this does a proper forward, but I believe it does
         callback{cb}
     {
+        // DEBT: Not MT safe, stop_state_ may have gone away
         sink_stop_requested.connect<&stop_callback::on_stop_requested>(this);
     }
 
     ~stop_callback()
     {
-        sink_stop_requested.disconnect<&stop_callback::on_stop_requested>(this);
+        // sink_stop_requested holds a pointer to sigh_stop_requested.
+        // entt:sink doesn't auto disconnect on destructor (that's what scoped_connection
+        // is for)
+        if(!stop_state_.expired())
+            sink_stop_requested.disconnect<&stop_callback::on_stop_requested>(this);
     }
 #endif
 };
