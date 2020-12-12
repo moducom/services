@@ -28,8 +28,10 @@ struct stop_state
 
 class stop_token
 {
+    using stop_state = internal::stop_state;
+
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    std::weak_ptr<internal::stop_state> stop_state_;
+    std::weak_ptr<stop_state> stop_state_;
 
     stop_token(stop_source& source);
 #else
@@ -74,8 +76,10 @@ public:
 
 class stop_source
 {
+    using stop_state = internal::stop_state;
+
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
-    std::shared_ptr<internal::stop_state> stop_state_;
+    std::shared_ptr<stop_state> stop_state_;
 
     entt::sigh<void ()> sigh_stop_requested;
 
@@ -86,7 +90,7 @@ class stop_source
 
 public:
     stop_source() :
-        stop_state_(new internal::stop_state())
+        stop_state_(new stop_state())
     {
         stop_state_->owner = this;
     }
@@ -151,7 +155,7 @@ inline bool stop_token::stop_possible() const noexcept
     if (stop_state_.expired()) return false;
 
     // DEBT: Not MT safe
-    std::shared_ptr<internal::stop_state> ss = stop_state_.lock();
+    std::shared_ptr<stop_state> ss = stop_state_.lock();
     stop_source* source = ss->owner;
 
     return source != nullptr && source->stop_possible();
@@ -174,7 +178,7 @@ class stop_callback
 
     Callback callback;
 
-    void enttFriendlyCallback()
+    void on_stop_requested()
     {
         callback();
     }
@@ -192,12 +196,12 @@ public:
         // DEBT: Unknown if this does a proper forward, but I believe it does
         callback{cb}
     {
-        sink_stop_requested.connect<&stop_callback::enttFriendlyCallback>(this);
+        sink_stop_requested.connect<&stop_callback::on_stop_requested>(this);
     }
 
     ~stop_callback()
     {
-        sink_stop_requested.disconnect<&stop_callback::enttFriendlyCallback>(this);
+        sink_stop_requested.disconnect<&stop_callback::on_stop_requested>(this);
     }
 #endif
 };
