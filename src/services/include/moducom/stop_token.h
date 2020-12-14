@@ -205,7 +205,7 @@ class stop_callback
             sink_stop_requested.connect<&impl::on_stop_requested>(this);
         }
 
-        void disconnect(stop_callback& parent)
+        ~impl()
         {
             // sink_stop_requested holds a pointer to sigh_stop_requested.
             // entt:sink doesn't auto disconnect on destructor (that's what scoped_connection
@@ -226,11 +226,6 @@ public:
     stop_callback(stop_token st, C&& cb) :
         helper_(st.stop_state_.lock(), std::move(cb))
     {
-    }
-
-    ~stop_callback()
-    {
-        helper_.disconnect(*this);
     }
 #endif
 };
