@@ -175,24 +175,34 @@ class stop_callback
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     using stop_state = internal::stop_state;
 
-    class helper
+    typedef Callback callback_type;
+
+    class impl
     {
         // if shared_ptr goes away weak_ptr will tell us that.  If stop_state
         // is already gone from the get go, weak_ptr's lock behavior creates a
         // brand new stop_state, which is sufficient
         std::weak_ptr<stop_state> stop_state_;
         entt::sink<void ()> sink_stop_requested;
+        Callback callback;
+
+        void on_stop_requested()
+        {
+            callback();
+        }
 
     public:
         /// Helper needed because RAII behavior of sink_stop_requested is a little
         /// unresilient to weak_ptr's maybe/maybe not personality
         /// \param ss use of shared_ptr - even temporarily - guarantees availability of
         /// underlying pointer
-        helper(std::shared_ptr<stop_state> ss, stop_callback& parent) :
+        impl(std::shared_ptr<stop_state> ss, callback_type&& callback) :
             stop_state_{ss},
-            sink_stop_requested{ss->sigh_stop_requested}
+            sink_stop_requested{ss->sigh_stop_requested},
+            // DEBT: Unknown if this does a proper forward, but I believe it does
+            callback{callback}
         {
-            sink_stop_requested.connect<&stop_callback::on_stop_requested>(parent);
+            sink_stop_requested.connect<&impl::on_stop_requested>(this);
         }
 
         void disconnect(stop_callback& parent)
@@ -201,28 +211,20 @@ class stop_callback
             // entt:sink doesn't auto disconnect on destructor (that's what scoped_connection
             // is for)
             if(!stop_state_.expired())
-                sink_stop_requested.disconnect<&stop_callback::on_stop_requested>(parent);
+                sink_stop_requested.disconnect<&impl::on_stop_requested>(this);
         }
     };
 
-    Callback callback;
-    helper helper_;
+    impl helper_;
 
-    void on_stop_requested()
-    {
-        callback();
-    }
 #endif
 
 public:
-    typedef Callback callback_type;
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        helper_(st.stop_state_.lock(), *this),
-        // DEBT: Unknown if this does a proper forward, but I believe it does
-        callback{cb}
+        helper_(st.stop_state_.lock(), std::move(cb))
     {
     }
 
