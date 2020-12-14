@@ -81,6 +81,7 @@ class stop_source
     using stop_state = internal::stop_state;
 
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
+protected:
     std::shared_ptr<stop_state> stop_state_;
 
     template <class T>
@@ -175,18 +176,26 @@ namespace internal {
 
 class stop_callback_impl
 {
-protected:
     // if shared_ptr goes away weak_ptr will tell us that.  If stop_state
     // is already gone from the get go, weak_ptr's lock behavior creates a
     // brand new stop_state, which is sufficient
     std::weak_ptr<stop_state> stop_state_;
+
+public:
     entt::sink<void ()> sink_stop_requested;
 
-    stop_callback_impl(std::shared_ptr<stop_state>& ss) :
+    stop_callback_impl(std::shared_ptr<stop_state>&& ss) :
             stop_state_{ss},
             sink_stop_requested{ss->sigh_stop_requested}
     {
 
+    }
+
+    ~stop_callback_impl()
+    {
+        // DEBT: Not MT safe
+        if(!stop_state_.expired())
+            sink_stop_requested.disconnect();
     }
 };
 
@@ -202,9 +211,9 @@ class stop_callback
 
     class impl : public internal::stop_callback_impl
     {
-        Callback callback;
+        callback_type callback;
 
-        void on_stop_requested()
+        void on_stop_requested() const
         {
             callback();
         }
@@ -214,25 +223,16 @@ class stop_callback
         /// unresilient to weak_ptr's maybe/maybe not personality
         /// \param ss use of shared_ptr - even temporarily - guarantees availability of
         /// underlying pointer
-        impl(std::shared_ptr<stop_state> ss, callback_type&& callback) :
-            internal::stop_callback_impl(ss),
+        impl(std::shared_ptr<stop_state>&& ss, callback_type&& callback) :
+            internal::stop_callback_impl(std::move(ss)),
             // DEBT: Unknown if this does a proper forward, but I believe it does
             callback{callback}
         {
             sink_stop_requested.connect<&impl::on_stop_requested>(this);
         }
-
-        ~impl()
-        {
-            // sink_stop_requested holds a pointer to sigh_stop_requested.
-            // entt:sink doesn't auto disconnect on destructor (that's what scoped_connection
-            // is for)
-            if(!stop_state_.expired())
-                sink_stop_requested.disconnect<&impl::on_stop_requested>(this);
-        }
     };
 
-    impl helper_;
+    impl impl_;
 
 #endif
 
@@ -241,7 +241,7 @@ public:
 #if FEATURE_MC_SERVICES_ENTT_STOPTOKEN
     template <class C>
     stop_callback(stop_token st, C&& cb) :
-        helper_(st.stop_state_.lock(), std::move(cb))
+        impl_(st.stop_state_.lock(), std::move(cb))
     {
     }
 #endif
@@ -260,20 +260,13 @@ stop_callback(stop_token, Callback) -> stop_callback<Callback>;
 // https://timmurphy.org/2014/08/28/passing-member-functions-as-template-parameters-in-c/
 class linked_stop_source : public stop_source
 {
-    struct impl : internal::stop_callback_impl
+    internal::stop_callback_impl impl_;
+
+    // Cascade linked request into our own
+    // Not used now, get rid of this once we prove things are working well
+    void on_request_stop()
     {
-        impl(std::shared_ptr<internal::stop_state> stop_state) :
-                internal::stop_callback_impl(stop_state)
-        {
-
-        }
-    };
-
-    impl impl_;
-
-    void handler()
-    {
-
+        stop_source::request_stop();
     }
 
     //stop_callback<decltype(&linked_stop_source::handler)> callback;
@@ -287,11 +280,38 @@ public:
         //: callback(st, []{  })
         //: callback(st, &linked_stop_source::handler)
     {
+        if(st.stop_requested())
+        {
+            stop_state_->stop_requested_ = true;
+            return;
+        }
         //stop_callback<void (linked_stop_source::*)(linked_stop_source*)> callback(st, &linked_stop_source::handler);
-        stop_callback test(st, [this] { this->handler(); });
-        stop_callback test2(st, [this] { this->handler(); });
+
+        //stop_callback test(st, [this] { this->on_request_stop(); });
+        //stop_callback test2(st, [this] { this->on_request_stop(); });
+
         //stop_callback test(st, &linked_stop_source::handler);
+
+        //impl_.sink_stop_requested.connect<&linked_stop_source::on_request_stop>(this);
+        impl_.sink_stop_requested.connect<&linked_stop_source::request_stop>(this);
     }
+
+    /*
+     * NOTE: Consider using this if we wanna vector up our impl's to support multiple incoming tokens
+    linked_stop_source(std::initializer_list<stop_token> st_list) :
+            impl_(st.stop_state_.lock())
+    {
+        for(stop_token st : st_list)
+        {
+            if(st.stop_requested())
+            {
+                stop_state_->stop_requested_ = true;
+                return;
+            }
+
+            impl_.sink_stop_requested.connect<&linked_stop_source::request_stop>(this);
+        }
+    } */
 };
 
 

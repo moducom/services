@@ -57,9 +57,15 @@ TEST_CASE("misc")
 
             REQUIRE(called_back);
         }
-        SECTION("")
+        SECTION("linked_stop_source")
         {
             linked_stop_source ss(s.token());
+
+            REQUIRE(!ss.stop_requested());
+
+            s.request_stop();
+
+            REQUIRE(ss.stop_requested());
         }
     }
     SECTION("Agent")
