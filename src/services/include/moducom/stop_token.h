@@ -239,5 +239,29 @@ stop_callback(stop_token, Callback) -> stop_callback<Callback>;
 #endif
 #endif
 
+// can't quite figure out syntax
+class linked_stop_source : public stop_source
+{
+    void handler()
+    {
+
+    }
+
+    //stop_callback<decltype(&linked_stop_source::handler)> callback;
+    //stop_callback<lambda()&> callback;
+    //stop_callback<void (*)()> callback;
+    stop_callback<void (linked_stop_source::*)()> callback;
+
+public:
+    linked_stop_source(stop_token st)
+        //: callback(st, []{  })
+        //: callback(st, handler)
+    {
+        stop_callback test(st, [this] { this->handler(); });
+        stop_callback test2(st, [this] { this->handler(); });
+        //stop_callback test(st, &linked_stop_source::handler);
+    }
+};
+
 
 }}
