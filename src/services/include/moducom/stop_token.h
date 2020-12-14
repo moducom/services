@@ -240,6 +240,7 @@ stop_callback(stop_token, Callback) -> stop_callback<Callback>;
 #endif
 
 // can't quite figure out syntax
+// https://timmurphy.org/2014/08/28/passing-member-functions-as-template-parameters-in-c/
 class linked_stop_source : public stop_source
 {
     void handler()
