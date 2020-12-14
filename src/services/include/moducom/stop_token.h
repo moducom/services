@@ -41,6 +41,7 @@ class stop_token
 #endif
 
     friend class stop_source;
+    friend class linked_stop_source;
 
     template <class T>
     friend class stop_callback;
@@ -169,6 +170,28 @@ inline bool stop_token::stop_requested() const noexcept
 }
 #endif
 
+
+namespace internal {
+
+class stop_callback_impl
+{
+protected:
+    // if shared_ptr goes away weak_ptr will tell us that.  If stop_state
+    // is already gone from the get go, weak_ptr's lock behavior creates a
+    // brand new stop_state, which is sufficient
+    std::weak_ptr<stop_state> stop_state_;
+    entt::sink<void ()> sink_stop_requested;
+
+    stop_callback_impl(std::shared_ptr<stop_state>& ss) :
+            stop_state_{ss},
+            sink_stop_requested{ss->sigh_stop_requested}
+    {
+
+    }
+};
+
+}
+
 template <class Callback>
 class stop_callback
 {
@@ -177,13 +200,8 @@ class stop_callback
 
     typedef Callback callback_type;
 
-    class impl
+    class impl : public internal::stop_callback_impl
     {
-        // if shared_ptr goes away weak_ptr will tell us that.  If stop_state
-        // is already gone from the get go, weak_ptr's lock behavior creates a
-        // brand new stop_state, which is sufficient
-        std::weak_ptr<stop_state> stop_state_;
-        entt::sink<void ()> sink_stop_requested;
         Callback callback;
 
         void on_stop_requested()
@@ -197,8 +215,7 @@ class stop_callback
         /// \param ss use of shared_ptr - even temporarily - guarantees availability of
         /// underlying pointer
         impl(std::shared_ptr<stop_state> ss, callback_type&& callback) :
-            stop_state_{ss},
-            sink_stop_requested{ss->sigh_stop_requested},
+            internal::stop_callback_impl(ss),
             // DEBT: Unknown if this does a proper forward, but I believe it does
             callback{callback}
         {
@@ -243,6 +260,17 @@ stop_callback(stop_token, Callback) -> stop_callback<Callback>;
 // https://timmurphy.org/2014/08/28/passing-member-functions-as-template-parameters-in-c/
 class linked_stop_source : public stop_source
 {
+    struct impl : internal::stop_callback_impl
+    {
+        impl(std::shared_ptr<internal::stop_state> stop_state) :
+                internal::stop_callback_impl(stop_state)
+        {
+
+        }
+    };
+
+    impl impl_;
+
     void handler()
     {
 
@@ -254,7 +282,8 @@ class linked_stop_source : public stop_source
     //stop_callback<void (linked_stop_source::*)()> callback;
 
 public:
-    linked_stop_source(stop_token st)
+    linked_stop_source(stop_token st) :
+        impl_(st.stop_state_.lock())
         //: callback(st, []{  })
         //: callback(st, &linked_stop_source::handler)
     {
