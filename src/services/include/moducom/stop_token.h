@@ -250,13 +250,14 @@ class linked_stop_source : public stop_source
     //stop_callback<decltype(&linked_stop_source::handler)> callback;
     //stop_callback<lambda()&> callback;
     //stop_callback<void (*)()> callback;
-    stop_callback<void (linked_stop_source::*)()> callback;
+    //stop_callback<void (linked_stop_source::*)()> callback;
 
 public:
     linked_stop_source(stop_token st)
         //: callback(st, []{  })
-        //: callback(st, handler)
+        //: callback(st, &linked_stop_source::handler)
     {
+        //stop_callback<void (linked_stop_source::*)(linked_stop_source*)> callback(st, &linked_stop_source::handler);
         stop_callback test(st, [this] { this->handler(); });
         stop_callback test2(st, [this] { this->handler(); });
         //stop_callback test(st, &linked_stop_source::handler);
