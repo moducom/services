@@ -16,6 +16,8 @@ add_library(${PROJECT_NAME}
         usb.cpp usb.h
         wrapper.h)
 
+add_library(Moducom::Service::LibUsb ALIAS ${PROJECT_NAME})
+
 # DEBT: So damn sloppy
 #target_include_directories(${PROJECT_NAME} PUBLIC {$CMAKE_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${ROOT_DIR}/src)
