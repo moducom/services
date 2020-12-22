@@ -46,6 +46,10 @@ class TransferBase
 protected:
     libusb_transfer* const transfer;
 
+    TransferBase(libusb_transfer* transfer) :
+        transfer(transfer)
+    {}
+
 public:
     TransferBase(int iso_packets = 0) : transfer(libusb_alloc_transfer(iso_packets))
     {
@@ -94,6 +98,11 @@ public:
     {
         return Buffer{transfer->buffer,
                       use_total_length ? transfer->length : transfer->actual_length};
+    }
+
+    void free()
+    {
+        libusb_free_transfer(transfer);
     }
 };
 
@@ -480,6 +489,12 @@ public:
 
 class Transfer : public TransferBase
 {
+    Transfer(libusb_transfer* transfer) :
+        TransferBase(transfer)
+    {
+
+    }
+
 public:
     Transfer(int iso_packets = 0) : TransferBase(iso_packets)
     {
@@ -489,6 +504,11 @@ public:
     DeviceHandle device_handle() const
     {
         return transfer->dev_handle;
+    }
+
+    static Transfer alloc(int iso_packets)
+    {
+        return libusb_alloc_transfer(iso_packets);
     }
 };
 

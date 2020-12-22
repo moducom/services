@@ -75,6 +75,29 @@ public:
     Device& operator *() { return device; }
 };
 
+
+template <>
+class Guard<libusb::Transfer>
+{
+    libusb::Transfer transfer;
+
+public:
+    // Temporary - eventually transfer will be a thinner wrapper and we won't
+    // pass iso_packets in but rather the allocated transfer
+    Guard(int iso_packets = 0) :
+        transfer(libusb::Transfer::alloc(iso_packets))
+    {
+
+    }
+
+    ~Guard()
+    {
+        //transfer.free();
+    }
+
+    libusb::Transfer& operator *() { return transfer; }
+};
+
 }
 
 namespace services {
