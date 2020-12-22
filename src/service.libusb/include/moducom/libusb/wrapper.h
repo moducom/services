@@ -105,10 +105,13 @@ class DeviceHandle
 {
     libusb_device_handle* const device_handle;
 
-public:
+    friend class Device;
+    friend class Transfer;
+
     DeviceHandle(libusb_device_handle* device_handle) :
             device_handle(device_handle) {}
 
+public:
     DeviceHandle(DeviceHandle&&) = default;
     DeviceHandle(const DeviceHandle&) = default;
 
