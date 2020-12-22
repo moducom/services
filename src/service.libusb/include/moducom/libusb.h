@@ -35,6 +35,35 @@ public:
     }
 };
 
+template <>
+class Guard<Device>
+{
+    Device device;
+
+public:
+    Guard(libusb_device* device) :
+        device(device)
+    {
+        this->device.ref();
+    }
+
+    Guard(Guard&& moveFrom) :
+        device(std::move(moveFrom.device))
+    {
+        // since libusb::Device doesn't autoref, we do it manually -
+        // this way Guard dtor which now runs twice (moved copy + original)
+        // will have device ref'd twice too to match
+        this->device.ref();
+    }
+
+    ~Guard()
+    {
+        this->device.unref();
+    }
+
+    Device* operator ->() { return &device; }
+};
+
 }
 
 namespace services {
