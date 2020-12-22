@@ -87,14 +87,20 @@ public:
             device.unref();
         }
 
-        //LibUsbMeta(const LibUsbMeta&) = default;
-
-        Device(Device&&) = default;
-
-        Device& operator=(const Device& copyFrom)
+        Device(Device&& moveFrom) :
+                device(std::move(moveFrom.device)),
+                device_descriptor(std::move(moveFrom.device_descriptor))
         {
-            new (&device) libusb::Device(copyFrom.device);
-            device_descriptor = copyFrom.device_descriptor;
+            // in this special case, a copy needs a ref since the old LibUsb::Device ctor is going to unref
+            // in addition to this new moved 'copy'
+            device.ref();
+        }
+
+        Device& operator=(Device&& moveFrom)
+        {
+            // Since we're move-copying-over an existing one, we have to unref the old device
+            device.unref();
+            new (this) Device(std::move(moveFrom));
             return *this;
         }
     };
