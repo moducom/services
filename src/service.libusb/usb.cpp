@@ -48,6 +48,8 @@ inline void LibUsb::add_device(libusb_device* device)
             LIBUSB_DT_INTERFACE_SIZE); */
     }
 
+    // FIX: Adding this next emplace causes a crash on exit() call - almost definitely lingering refs
+    // or similar
     registry.emplace<Device>(id, device);
 }
 
