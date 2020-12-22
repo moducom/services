@@ -124,17 +124,8 @@ void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
 // yet
 static entt::registry dummyRegistry;
 
-LibUsb::LibUsb()
+void LibUsb::init()
 {
-    context.init();
-#ifdef __WINDOWS__
-    // Guidance from
-    // https://github.com/libusb/libusb/wiki/Windows#Driver_Installation
-    // NOTE: Gets a LIBUSB_ERROR_NOT_FOUND unless one installs
-    // https://cgit.freedesktop.org/spice/win32/usbdk
-    //context.option(LIBUSB_OPTION_USE_USBDK);
-#endif
-
     // on macOS, enabling this indicates libusb does appear to be working.  Perhaps it auto
     // filters system devices?  No external USB devices at this time for me to test with
     //context.option(LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
@@ -158,6 +149,21 @@ LibUsb::LibUsb()
     }
 
     // Hotplug is async, so started/running doesn't necessarily mean all the devices are there yet.
+}
+
+LibUsb::LibUsb(bool autoInit)
+{
+    context.init();
+#ifdef __WINDOWS__
+    // Guidance from
+    // https://github.com/libusb/libusb/wiki/Windows#Driver_Installation
+    // NOTE: Gets a LIBUSB_ERROR_NOT_FOUND unless one installs
+    // https://cgit.freedesktop.org/spice/win32/usbdk
+    //context.option(LIBUSB_OPTION_USE_USBDK);
+#endif
+
+    if(autoInit)
+        init();
 }
 
 LibUsb::~LibUsb()

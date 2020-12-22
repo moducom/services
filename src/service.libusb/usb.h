@@ -63,8 +63,10 @@ class LibUsb : public ServiceBase
     }
 
 public:
-    LibUsb();
+    LibUsb(bool autoInit = true);
     ~LibUsb();
+
+    void init();
 
     struct Device
     {
