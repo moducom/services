@@ -6,7 +6,7 @@ build-catch-*/
 **/.idea/workspace.xml
 **/.idea/vcs.xml
 
-lib/conan/
+**/lib/conan/
 
 # VS2019 specific
 src/**/out/
