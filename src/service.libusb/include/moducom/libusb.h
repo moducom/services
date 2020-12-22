@@ -28,6 +28,7 @@ public:
     }
 
     DeviceHandle* operator ->() { return &handle; }
+    DeviceHandle& operator *() { return handle; }
 
     ~Guard()
     {
@@ -71,6 +72,7 @@ public:
     }
 
     Device* operator ->() { return &device; }
+    Device& operator *() { return device; }
 };
 
 }
