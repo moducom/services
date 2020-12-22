@@ -192,24 +192,42 @@ public:
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
-    void get_string_descriptor(uint8_t desc_index, uint8_t langid, unsigned char* data, int length)
+    int get_string_descriptor(uint8_t desc_index, uint8_t langid, unsigned char* data, int length)
     {
-        auto result = (libusb_error) libusb_get_string_descriptor(device_handle, langid, desc_index, data, length);
+        int result = libusb_get_string_descriptor(device_handle, langid, desc_index, data, length);
 
-        if(result != LIBUSB_SUCCESS) throw Exception(result);
+        if(result > 0) return result;
+        else throw Exception((libusb_error)result);
     }
 
     /// Gets C-style ASCII descriptor, using first language supported by device
     /// \param desc_index
     /// \param data
     /// \param length
-    void get_string_descriptor(uint8_t desc_index, char* data, int length)
+    int get_string_descriptor(uint8_t desc_index, char* data, int length)
     {
-        auto result = (libusb_error) libusb_get_string_descriptor_ascii(device_handle, desc_index,
+        int result = libusb_get_string_descriptor_ascii(device_handle, desc_index,
                                                                         (unsigned char*)data, length);
 
-        if(result != LIBUSB_SUCCESS) throw Exception(result);
+        if(result > 0) return result;
+        else throw Exception((libusb_error)result);
     }
+
+#if __cplusplus > 201103L
+    std::string get_string_descriptor(uint8_t desc_index)
+    {
+        // starting from C++11 and gaining reliability forward, we can peer right into
+        // string's buf
+        // https://stackoverflow.com/questions/39200665/directly-write-into-char-buffer-of-stdstring
+        std::string s;
+
+        s.resize(128);
+
+        get_string_descriptor(desc_index, &s.front(), 128);
+
+        return s;
+    }
+#endif
 
     bool kernel_driver_active(int if_num)
     {

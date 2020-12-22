@@ -12,18 +12,20 @@ void found(entt::registry& r, entt::entity e)
 
     try
     {
-        moducom::libusb::DeviceHandle dh = device.device.open();
+        moducom::libusb::DeviceHandle dh = device.device->open();
 
-        char buf[128];
+        std::string productName;
 
         try
         {
-            dh.get_string_descriptor(device.device_descriptor.iProduct, buf, sizeof(buf));
+            productName = dh.get_string_descriptor(device.device_descriptor.iProduct);
         }
         catch(const moducom::libusb::Exception& e)
         {
 
         }
+
+        std::cout << "Product name = " + productName << "." << std::endl;
 
         printw("Device");
         nl();
