@@ -192,6 +192,12 @@ public:
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
+    /// Unicode
+    /// \param desc_index
+    /// \param langid
+    /// \param data
+    /// \param length
+    /// \return
     int get_string_descriptor(uint8_t desc_index, uint8_t langid, unsigned char* data, int length)
     {
         int result = libusb_get_string_descriptor(device_handle, langid, desc_index, data, length);
@@ -227,6 +233,20 @@ public:
 
         return s;
     }
+
+    std::u16string get_u16string_descriptor(uint8_t desc_index, uint16_t langid = 1)
+    {
+        std::u16string s;
+
+        s.resize(128);
+
+        // DEBT: Almost definitely an endian issue happening here
+        get_string_descriptor(desc_index, langid,
+                              (unsigned char*)&s.front(), 128);
+
+        return s;
+    }
+
 #endif
 
     bool kernel_driver_active(int if_num)

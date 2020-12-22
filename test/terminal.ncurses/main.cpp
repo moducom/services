@@ -18,6 +18,7 @@ void found(entt::registry& r, entt::entity e)
 
         try
         {
+            auto test = dh.get_u16string_descriptor(device.device_descriptor.iProduct, 2);
             productName = dh.get_string_descriptor(device.device_descriptor.iProduct);
         }
         catch(const moducom::libusb::Exception& e)
