@@ -29,8 +29,11 @@ class Session
         buf[buffer.length] = 0;
 
         // DEBT: Do this in a different thread
+#if ENABLE_NCURSES
         printw(buf);
-        refresh();
+#else
+        std::cout << buf;
+#endif
     }
 
 public:
@@ -124,6 +127,7 @@ int main()
     {
         // DEBT: run() blocks, but eventually shouldn't
         libusb.run();
+        refresh();
     }
 
     if(session) delete session;
