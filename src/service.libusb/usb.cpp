@@ -3,38 +3,6 @@
 
 namespace moducom { namespace services {
 
-// TODO: Fix this lousy name
-struct LibUsbMeta
-{
-    libusb::Device device;
-    libusb_device_descriptor device_descriptor;
-    //libusb::ConfigDescriptor config;
-
-    LibUsbMeta(libusb::Device device) :
-        device(device)
-    {
-        device.ref();
-
-        libusb_get_device_descriptor(device, &device_descriptor);
-    }
-
-    ~LibUsbMeta()
-    {
-        device.unref();
-    }
-
-    //LibUsbMeta(const LibUsbMeta&) = default;
-
-    LibUsbMeta(LibUsbMeta&&) = default;
-
-    LibUsbMeta& operator=(const LibUsbMeta& copyFrom)
-    {
-        new (&device) libusb::Device(copyFrom.device);
-        device_descriptor = copyFrom.device_descriptor;
-        return *this;
-    }
-};
-
 inline void LibUsb::add_device(libusb_device* device)
 {
     libusb::Device d(device);
@@ -80,7 +48,7 @@ inline void LibUsb::add_device(libusb_device* device)
             LIBUSB_DT_INTERFACE_SIZE); */
     }
 
-    registry.emplace<LibUsbMeta>(id, device);
+    registry.emplace<Device>(id, device);
 }
 
 inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)

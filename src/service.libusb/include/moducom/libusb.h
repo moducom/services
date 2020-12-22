@@ -70,17 +70,35 @@ public:
 
     struct Device
     {
-        libusb_device_descriptor deviceDescriptor;
-        libusb::ConfigDescriptor activeConfigDescriptor;
         libusb::Device device;
+        libusb_device_descriptor device_descriptor;
+        //libusb::ConfigDescriptor config;
 
-        /*
-        Device(libusb_device* device) :
-            device(device)
+        Device(libusb::Device device) :
+                device(device)
         {
+            device.ref();
 
-        } */
+            libusb_get_device_descriptor(device, &device_descriptor);
+        }
+
+        ~Device()
+        {
+            device.unref();
+        }
+
+        //LibUsbMeta(const LibUsbMeta&) = default;
+
+        Device(Device&&) = default;
+
+        Device& operator=(const Device& copyFrom)
+        {
+            new (&device) libusb::Device(copyFrom.device);
+            device_descriptor = copyFrom.device_descriptor;
+            return *this;
+        }
     };
+
 
     static Description description()
     {

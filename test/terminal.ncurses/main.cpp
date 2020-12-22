@@ -6,7 +6,7 @@
 
 void found(entt::registry& r, entt::entity e)
 {
-    auto& configDescriptor = r.get<moducom::libusb::ConfigDescriptor>(e);
+    auto& device = r.get<moducom::services::LibUsb::Device>(e);
 
     printw("Device");
     nl();
@@ -19,7 +19,7 @@ int main()
 
     initscr();
 
-    libusb.registry.on_construct<libusb_device*>().connect<&found>();
+    libusb.registry.on_construct<moducom::services::LibUsb::Device>().connect<&found>();
 
     libusb.init();
 
