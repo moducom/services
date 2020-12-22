@@ -337,6 +337,13 @@ public:
 
         return config;
     }
+
+    void get_device_descriptor(libusb_device_descriptor* descriptor)
+    {
+        auto status = (libusb_error) libusb_get_device_descriptor(device, descriptor);
+
+        if(status != LIBUSB_SUCCESS) throw Exception(status);
+    }
 };
 
 

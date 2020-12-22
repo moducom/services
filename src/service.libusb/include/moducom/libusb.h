@@ -56,6 +56,15 @@ public:
         this->device.ref();
     }
 
+    Guard& operator=(Guard&& moveFrom)
+    {
+        // if move copying over an existing device, be sure to unref since it won't be pointed
+        // to when 'this' dtor runs
+        device.unref();
+        new (this) Guard(std::move(moveFrom));
+        return *this;
+    }
+
     ~Guard()
     {
         this->device.unref();
@@ -99,39 +108,18 @@ public:
 
     struct Device
     {
-        libusb::Device device;
+        libusb::Guard<libusb::Device> device;
         libusb_device_descriptor device_descriptor;
         //libusb::ConfigDescriptor config;
 
         Device(libusb::Device device) :
                 device(device)
         {
-            device.ref();
-
-            libusb_get_device_descriptor(device, &device_descriptor);
+            device.get_device_descriptor(&device_descriptor);
         }
 
-        ~Device()
-        {
-            device.unref();
-        }
-
-        Device(Device&& moveFrom) :
-                device(std::move(moveFrom.device)),
-                device_descriptor(std::move(moveFrom.device_descriptor))
-        {
-            // in this special case, a copy needs a ref since the old LibUsb::Device ctor is going to unref
-            // in addition to this new moved 'copy'
-            device.ref();
-        }
-
-        Device& operator=(Device&& moveFrom)
-        {
-            // Since we're move-copying-over an existing one, we have to unref the old device
-            device.unref();
-            new (this) Device(std::move(moveFrom));
-            return *this;
-        }
+        Device(Device&& moveFrom) = default;
+        Device& operator=(Device&& moveFrom) = default;
     };
 
 
