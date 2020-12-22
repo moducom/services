@@ -196,6 +196,18 @@ public:
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
 
+    /// Gets C-style ASCII descriptor, using first language supported by device
+    /// \param desc_index
+    /// \param data
+    /// \param length
+    void get_string_descriptor(uint8_t desc_index, char* data, int length)
+    {
+        auto result = (libusb_error) libusb_get_string_descriptor_ascii(device_handle, desc_index,
+                                                                        (unsigned char*)data, length);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+    }
+
     bool kernel_driver_active(int if_num)
     {
         int result = libusb_kernel_driver_active(device_handle, if_num);
