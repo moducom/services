@@ -1,6 +1,6 @@
 #pragma once
 
-#include "usb.h"
+#include <moducom/libusb.h>
 #include <services/service.hpp>
 #include <services/agents.hpp>
 

@@ -1,7 +1,7 @@
 #include "catch2/catch.hpp"
 #include "services.h"
 
-#include <service.libusb/usb.h>
+#include <moducom/libusb.h>
 #include <service.libusb/acm.h>
 
 #include <moducom/libusb/service.hpp>

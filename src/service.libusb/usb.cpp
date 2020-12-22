@@ -1,4 +1,4 @@
-#include "usb.h"
+#include <moducom/libusb.h>
 #include <entt/entt.hpp>
 
 namespace moducom { namespace services {
