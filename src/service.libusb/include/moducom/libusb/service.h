@@ -38,6 +38,7 @@ public:
 template <class TTransferImpl>
 class Transfer : public TransferBase
 {
+    friend TTransferImpl;
     friend class TransferAgent;
 
     void callback();
@@ -50,6 +51,7 @@ public:
     Transfer(libusb::DeviceHandle deviceHandle,
              uint8_t endpoint, int length, unsigned timeout = 0)
     {
+        // early setup.  Calls to 'alloc' and 'start' still required
         transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
                                     transferCallback, this, timeout);
     }
@@ -70,7 +72,7 @@ public:
 
 namespace internal {
 
-struct TransferEnttImpl
+class TransferEnttImpl
 {
     entt::sigh<void (libusb::Transfer&)> sighCompleted;
     entt::sigh<void (libusb::Transfer&)> sighStatus;
@@ -84,6 +86,8 @@ public:
         sinkStatus{sighStatus}
     {}
 
+    // template friend lets us get here
+private:
     void onCompleted(TransferBase& parent, libusb_transfer* t);
     void onStatus(TransferBase& parent, libusb_transfer* t);
 };
