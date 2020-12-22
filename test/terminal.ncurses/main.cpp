@@ -5,6 +5,7 @@
 #include "../../src/service.libusb/acm.h"
 
 #define ENABLE_NCURSES 0
+#define ENABLE_GETINFO 0
 
 typedef moducom::libusb::services::experimental::CP210xTraits CP210xTraits;
 
@@ -18,9 +19,17 @@ class Session
 
     void render(moducom::libusb::Transfer& transfer)
     {
+        char buf[2048];
+
+        // FIX: Looks like we are getting the same buffer over and over again,
+        // so I think the flags to Transfer aren't allowing it to proceed forward
         moducom::libusb::Buffer buffer = transfer.buffer();
 
-        printw((char*)buffer.buffer);
+        std::copy(buffer.buffer, buffer.buffer + buffer.length, buf);
+        buf[buffer.length] = 0;
+
+        // DEBT: Do this in a different thread
+        printw(buf);
         refresh();
     }
 
@@ -40,6 +49,9 @@ public:
 
     ~Session()
     {
+        // FIX: Needs better than this to stop, needs some time to stop too I think
+        in.stop();
+
         handle->release_interface(0);
         in.impl.sinkCompleted.disconnect();
     }
@@ -52,6 +64,7 @@ void found(entt::registry& r, entt::entity e)
 {
     auto& device = r.get<moducom::services::LibUsb::Device>(e);
 
+#if ENABLE_GETINFO
     try
     {
         moducom::libusb::DeviceHandle dh = device.device->open();
@@ -79,6 +92,7 @@ void found(entt::registry& r, entt::entity e)
     catch(const moducom::libusb::Exception& e)
     {
     }
+#endif
 
     // DEBT: Not endian-friendly, but I lost our little helper for that
     if(device.device_descriptor.idVendor == CP210xTraits::VID &&
@@ -103,16 +117,18 @@ int main()
     printw("Hello World !!!");
     refresh();
 
-    getch();
-    endwin();
     //std::cout << "Hello, World!" << std::endl;
 
-    for(;;)
+    timeout(0);
+    while(getch() != 'x')
     {
+        // DEBT: run() blocks, but eventually shouldn't
         libusb.run();
     }
 
     if(session) delete session;
+
+    endwin();
 
     return 0;
 }
