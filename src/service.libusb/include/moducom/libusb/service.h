@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wrapper.h"
+#include "scoped.h"
 #include <entt/signal/sigh.hpp>
 #include <bitset>
 
@@ -12,7 +13,7 @@ class TransferBase
 {
     // DEBT: Want this protected, but impl has a hard time seeing in in that case
 public:
-    libusb::Transfer transfer;
+    Scoped<libusb::Transfer> transfer;
 
     enum Flags
     {
@@ -30,7 +31,7 @@ public:
     void start(unsigned char* external = nullptr);
     void stop()
     {
-        transfer.cancel();
+        transfer->cancel();
     }
 };
 
@@ -52,7 +53,7 @@ public:
              uint8_t endpoint, int length, unsigned timeout = 0)
     {
         // early setup.  Calls to 'alloc' and 'start' still required
-        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
+        transfer->fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
                                     transferCallback, this, timeout);
     }
 

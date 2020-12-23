@@ -91,6 +91,7 @@ public:
     }
 
     libusb::Transfer& operator *() { return transfer; }
+    libusb::Transfer* operator->() { return &transfer; }
 };
 
 

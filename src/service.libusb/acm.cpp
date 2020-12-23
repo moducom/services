@@ -213,22 +213,22 @@ namespace moducom { namespace libusb { namespace services {
 
 inline void TransferBase::alloc()
 {
-    libusb_transfer* t = transfer;
+    libusb_transfer* t = *transfer;
 
-    t->buffer = transfer.device_handle().alloc(transfer.length());
+    t->buffer = transfer->device_handle().alloc(transfer->length());
 
     bool dmaBufferMode = flags[DmaMode] = t->buffer != nullptr;
 
     if (!dmaBufferMode)
-        t->buffer = (unsigned char*) malloc(transfer.length());
+        t->buffer = (unsigned char*) malloc(transfer->length());
 }
 
 void TransferBase::free()
 {
-    libusb_transfer* t = transfer;
+    libusb_transfer* t = *transfer;
 
     if(flags[DmaMode])
-        transfer.device_handle().free(t->buffer, transfer.length());
+        transfer->device_handle().free(t->buffer, transfer->length());
     else if(!flags[External])
         ::free(t->buffer);
 }
@@ -242,7 +242,7 @@ void internal::TransferEnttImpl::onStatus(TransferBase& parent, libusb_transfer*
             parent.free();
 
         default:
-            sighStatus.publish(parent.transfer);
+            sighStatus.publish(*parent.transfer);
             break;
     }
 }
@@ -250,15 +250,15 @@ void internal::TransferEnttImpl::onStatus(TransferBase& parent, libusb_transfer*
 
 void internal::TransferEnttImpl::onCompleted(TransferBase& parent, libusb_transfer* t)
 {
-    sighCompleted.publish(parent.transfer);
+    sighCompleted.publish(*parent.transfer);
     if(!parent.flags[TransferBase::OneShot])
         // DEBT: Need to check return value of this and do something if it fails
-        parent.transfer.submit();
+        parent.transfer->submit();
 }
 
 void TransferBase::start(unsigned char* external)
 {
-    libusb_transfer* t = transfer;
+    libusb_transfer* t = *transfer;
 
     if(external == nullptr)
         alloc();
@@ -268,7 +268,7 @@ void TransferBase::start(unsigned char* external)
         t->buffer = external;
     }
 
-    libusb_error error = transfer.submit();
+    libusb_error error = transfer->submit();
 
     if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
 }
