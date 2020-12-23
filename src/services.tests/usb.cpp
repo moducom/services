@@ -43,8 +43,8 @@ void printDevices(const entt::registry& registry)
         std::cout << std::setw(4);
         std::cout << device.pid();
 
-        std::cout << " - class=" << (int)device.device_descriptor.bDeviceClass;
-        std::cout << ", configs=" << (int)device.device_descriptor.bNumConfigurations;
+        std::cout << " - class=" << (int)device.descriptor().bDeviceClass;
+        std::cout << ", configs=" << (int)device.descriptor().bNumConfigurations;
 
         std::cout << std::dec;
         std::cout << std::endl;

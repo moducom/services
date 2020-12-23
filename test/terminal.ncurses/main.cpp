@@ -42,8 +42,8 @@ class Session
     }
 
 public:
-    Session(moducom::libusb::Device device) :
-        handle(device),
+    Session(moducom::services::LibUsb::Device& device) :
+        handle(device.open()),
         in(*handle, CP210xTraits::inEndpoint, 1024),
         out(*handle, CP210xTraits::outEndpoint, 1024)
     {
@@ -108,7 +108,7 @@ void arrived(entt::registry& r, entt::entity e)
     if(device.vid() == CP210xTraits::VID &&
        device.pid() == CP210xTraits::PID)
     {
-        session = new Session(*device.device);
+        session = new Session(device);
     }
 }
 

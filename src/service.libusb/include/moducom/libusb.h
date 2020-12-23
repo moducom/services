@@ -39,12 +39,15 @@ public:
 
     void init();
 
-    struct Device
+    class Device
     {
+        friend class LibUsb;
+
         Scoped<libusb::Device> device;
         libusb_device_descriptor device_descriptor;
         //libusb::ConfigDescriptor config;
 
+    public:
         Device(libusb::Device device) :
                 device(device)
         {
@@ -64,9 +67,20 @@ public:
             return le16toh(device_descriptor.idVendor);
         }
 
-        libusb::DeviceHandle open()
+        // device release number in BCD format
+        uint16_t releaseNumber() const
         {
-            return device->open();
+            return le16toh(device_descriptor.bcdDevice);
+        }
+
+        Scoped<libusb::DeviceHandle> open() const
+        {
+            return Scoped<libusb::DeviceHandle>(*device);
+        }
+
+        const libusb_device_descriptor& descriptor() const
+        {
+            return device_descriptor;
         }
     };
 
@@ -82,11 +96,6 @@ public:
     Device& getDevice(entt::entity entity)
     {
         return registry.get<Device>(entity);
-    }
-
-    libusb::DeviceHandle openDeviceHandle(entt::entity entity)
-    {
-        return getDevice(entity).device->open();
     }
 
     template <class F>
