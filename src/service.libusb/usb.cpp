@@ -20,9 +20,6 @@ inline void LibUsb::add_device(libusb_device* device)
         // unconfigured devices are not unusual
     }
 
-    d.ref();
-    registry.emplace<libusb_device*>(id, device);
-
     {
         // Gets LIBUSB_ERROR_ACCESS
         //libusb::Guard<libusb::DeviceHandle> handle(device);
@@ -41,7 +38,7 @@ inline void LibUsb::add_device(libusb_device* device)
     registry.emplace<Device>(id, device);
 }
 
-inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)
+inline void LibUsb::remove_device(entt::entity deviceId)
 {
     auto config = registry.try_get<libusb::ConfigDescriptor>(deviceId);
     // FIX: Somehow, freeing this config descriptor invokes a segfault at the end of LibUsb dtor
@@ -49,8 +46,6 @@ inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)
     {
         //config->free();
     }
-    //config.free();
-    d.unref();
 
     registry.remove_all(deviceId);
     registry.destroy(deviceId);
@@ -66,7 +61,7 @@ inline void LibUsb::remove_device(libusb_device* device)
     });
 
     if(result != entt::null)
-        remove_device(device, result);
+        remove_device(result);
 }
 
 // NOTE: Can't truly do a refresh here yet because we have to free device list too
@@ -161,9 +156,9 @@ LibUsb::~LibUsb()
 
     // DEBT: All because our wrappers don't auto-free themselves, so we can't do
     // a registry.remove_all or let it auto destruct
-    for(entt::entity entity : registry.view<libusb_device*>())
+    for(entt::entity entity : registry.view<Device>())
     {
-        remove_device(registry.get<libusb_device*>(entity), entity);
+        remove_device(entity);
     }
 
     context.exit();
