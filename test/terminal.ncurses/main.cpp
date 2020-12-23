@@ -22,7 +22,7 @@ class Session
     Transfer in;
     Transfer out;
 
-    void render(moducom::libusb::Transfer& transfer)
+    void render(moducom::libusb::Transfer transfer)
     {
         char buf[2048];
 

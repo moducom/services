@@ -78,15 +78,15 @@ class TransferEnttImpl
     template <class TImpl>
     friend class moducom::libusb::services::Transfer;
 
-    entt::sigh<void (libusb::Transfer&)> sighCompleted;
-    entt::sigh<void (libusb::Transfer&)> sighStatus;
+    entt::sigh<void (libusb::Transfer)> sighCompleted;
+    entt::sigh<void (libusb::Transfer)> sighStatus;
 
     void onCompleted(TransferBase& parent, libusb_transfer* t);
     void onStatus(TransferBase& parent, libusb_transfer* t);
 
 public:
-    entt::sink<void (libusb::Transfer&)> sinkCompleted;
-    entt::sink<void (libusb::Transfer&)> sinkStatus;
+    entt::sink<void (libusb::Transfer)> sinkCompleted;
+    entt::sink<void (libusb::Transfer)> sinkStatus;
 
     TransferEnttImpl() :
         sinkCompleted{sighCompleted},
