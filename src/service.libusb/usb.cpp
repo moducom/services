@@ -38,18 +38,6 @@ inline void LibUsb::add_device(libusb_device* device)
     registry.emplace<Device>(id, device);
 }
 
-inline void LibUsb::remove_device(entt::entity deviceId)
-{
-    auto config = registry.try_get<libusb::ConfigDescriptor>(deviceId);
-    // FIX: Somehow, freeing this config descriptor invokes a segfault at the end of LibUsb dtor
-    if(config != nullptr)
-    {
-        //config->free();
-    }
-
-
-}
-
 
 inline void LibUsb::remove_device(libusb_device* device)
 {
@@ -58,8 +46,7 @@ inline void LibUsb::remove_device(libusb_device* device)
         return *d.device == device;
     });
 
-    if(result != entt::null)
-        remove_device(result);
+    if(result != entt::null) registry.destroy(result);
 }
 
 // NOTE: Can't truly do a refresh here yet because we have to free device list too

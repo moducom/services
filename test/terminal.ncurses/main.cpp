@@ -14,24 +14,24 @@
 #define ENABLE_GETINFO 0
 #define ENABLE_META_ONCOMPLETE 0
 
-typedef moducom::libusb::services::experimental::CP210xTraits CP210xTraits;
+using namespace moducom;
 
-typedef moducom::libusb::services::Transfer
-        <moducom::libusb::services::internal::TransferEnttImpl> Transfer;
+typedef libusb::services::experimental::CP210xTraits CP210xTraits;
+
+typedef libusb::services::Transfer
+        <libusb::services::internal::TransferEnttImpl> Transfer;
 
 class Session
 {
-    moducom::Scoped<moducom::libusb::DeviceHandle> handle;
+    Scoped<moducom::libusb::DeviceHandle> handle;
     Transfer in;
     Transfer out;
 
-    void render(moducom::libusb::Transfer transfer)
+    void render(libusb::Transfer transfer)
     {
         char buf[2048];
 
-        // FIX: Looks like we are getting the same buffer over and over again,
-        // so I think the flags to Transfer aren't allowing it to proceed forward
-        moducom::libusb::Buffer buffer = transfer.buffer();
+        libusb::Buffer buffer = transfer.buffer();
 
         std::copy(buffer.buffer, buffer.buffer + buffer.length, buf);
         buf[buffer.length] = 0;
@@ -121,6 +121,7 @@ void arrived(entt::registry& r, entt::entity e)
     if(device.vid() == CP210xTraits::VID &&
        device.pid() == CP210xTraits::PID)
     {
+        std::clog << "Found CP210x" << std::endl;
         session = new Session(device);
     }
 }
@@ -128,6 +129,8 @@ void arrived(entt::registry& r, entt::entity e)
 void left(entt::registry& r, entt::entity e)
 {
     auto& device = r.get<moducom::services::LibUsb::Device>(e);
+
+    std::clog << "Device left USB bus" << std::endl;
 }
 
 int main()
@@ -138,15 +141,13 @@ int main()
     initscr();
 #endif
 
-    libusb.registry.on_construct<moducom::services::LibUsb::Device>().connect<&arrived>();
-    libusb.registry.on_destroy<moducom::services::LibUsb::Device>().connect<&left>();
+    libusb.registry.on_construct<services::LibUsb::Device>().connect<&arrived>();
+    libusb.registry.on_destroy<services::LibUsb::Device>().connect<&left>();
 
     libusb.init();
 
     printw("Hello World !!!");
     refresh();
-
-    //std::cout << "Hello, World!" << std::endl;
 
     signal(SIGINT, signal_handler);
 
