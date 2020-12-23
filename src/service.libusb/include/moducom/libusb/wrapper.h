@@ -16,6 +16,7 @@
 #endif
 
 #include <stdexcept>
+#include <moducom/scoped.h>
 
 // raw libusb C++ wrappers, nothing fancy here
 namespace moducom { namespace libusb {
@@ -116,6 +117,7 @@ class DeviceHandle
 
     friend class Device;
     friend class Transfer;
+    friend class Scoped<DeviceHandle>;
 
     DeviceHandle(libusb_device_handle* device_handle) :
             device_handle(device_handle) {}

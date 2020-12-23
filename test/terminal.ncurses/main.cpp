@@ -1,11 +1,15 @@
 #include <iostream>
 
 #include <ncurses.h>
+
+#include <entt/entt.hpp>
+
 #include <moducom/libusb/service.hpp>
-#include "../../src/service.libusb/acm.h"
+#include <moducom/libusb.h>
 
 #define ENABLE_NCURSES 0
 #define ENABLE_GETINFO 0
+#define ENABLE_META_ONCOMPLETE 0
 
 typedef moducom::libusb::services::experimental::CP210xTraits CP210xTraits;
 
@@ -16,6 +20,7 @@ class Session
 {
     moducom::Scoped<moducom::libusb::DeviceHandle> handle;
     Transfer in;
+    Transfer out;
 
     void render(moducom::libusb::Transfer& transfer)
     {
@@ -39,12 +44,14 @@ class Session
 public:
     Session(moducom::libusb::Device device) :
         handle(device),
-        in(*handle, CP210xTraits::inEndpoint, 1024)
+        in(*handle, CP210xTraits::inEndpoint, 1024),
+        out(*handle, CP210xTraits::outEndpoint, 1024)
     {
         // DEBT: Linux only, wrap with an #ifdef
         handle->set_auto_detach_kernel_driver(true);
 
         handle->claim_interface(0);
+
         in.impl.sinkCompleted.connect<&Session::render>(this);
         in.alloc();
         in.start();
@@ -54,6 +61,7 @@ public:
     {
         // FIX: Needs better than this to stop, needs some time to stop too I think
         in.stop();
+        in.free();
 
         handle->release_interface(0);
         in.impl.sinkCompleted.disconnect();
@@ -63,7 +71,7 @@ public:
 
 Session* session = nullptr;
 
-void found(entt::registry& r, entt::entity e)
+void arrived(entt::registry& r, entt::entity e)
 {
     auto& device = r.get<moducom::services::LibUsb::Device>(e);
 
@@ -97,12 +105,16 @@ void found(entt::registry& r, entt::entity e)
     }
 #endif
 
-    // DEBT: Not endian-friendly, but I lost our little helper for that
     if(device.vid() == CP210xTraits::VID &&
        device.pid() == CP210xTraits::PID)
     {
         session = new Session(*device.device);
     }
+}
+
+void left(entt::registry& r, entt::entity e)
+{
+    auto& device = r.get<moducom::services::LibUsb::Device>(e);
 }
 
 int main()
@@ -113,7 +125,8 @@ int main()
     initscr();
 #endif
 
-    libusb.registry.on_construct<moducom::services::LibUsb::Device>().connect<&found>();
+    libusb.registry.on_construct<moducom::services::LibUsb::Device>().connect<&arrived>();
+    libusb.registry.on_destroy<moducom::services::LibUsb::Device>().connect<&left>();
 
     libusb.init();
 

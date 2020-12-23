@@ -18,12 +18,23 @@ public:
     {
     }
 
+
+    // Untested
+    Scoped(Scoped&& moveFrom) :
+        handle(moveFrom.handle)
+    {
+        // FIX: Totally cheating here, partly because DeviceHandle doesn't have a
+        // "real" move constructor
+        new (moveFrom.handle) libusb::DeviceHandle(nullptr);
+    }
+
     element_type* operator ->() { return &handle; }
     element_type& operator *() { return handle; }
 
     ~Scoped()
     {
-        handle.close();
+        if(handle.valid())
+            handle.close();
     }
 };
 

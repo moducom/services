@@ -13,7 +13,7 @@ void Transfer<TTransferImpl>::transferCallback(libusb_transfer* transfer)
         _this->impl.onCompleted(*_this, transfer);
         if(!_this->flags[TransferBase::OneShot])
             // DEBT: Need to check return value of this and do something if it fails
-            _this->transfer.submit();
+            _this->transfer->submit();
     }
     else
         _this->impl.onStatus(*_this, transfer);

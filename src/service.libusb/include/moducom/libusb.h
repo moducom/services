@@ -63,6 +63,11 @@ public:
         {
             return le16toh(device_descriptor.idVendor);
         }
+
+        libusb::DeviceHandle open()
+        {
+            return device->open();
+        }
     };
 
 
