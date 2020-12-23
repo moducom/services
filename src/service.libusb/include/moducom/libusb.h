@@ -74,29 +74,29 @@ public:
     // DEBT: Exposing this publicly seems not right somehow
     entt::registry registry;
 
-    libusb::Device getDevice(entt::entity entity)
+    Device& getDevice(entt::entity entity)
     {
-        return registry.get<libusb_device*>(entity);
+        return registry.get<Device>(entity);
     }
 
     libusb::DeviceHandle openDeviceHandle(entt::entity entity)
     {
-        return getDevice(entity).open();
+        return getDevice(entity).device->open();
     }
 
     template <class F>
     entt::entity findDevice(F&& f)
     {
-        auto desciptors = registry.view<libusb_device_descriptor>();
+        auto devices = registry.view<Device>();
 
-        auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](entt::entity entity)
+        auto result = std::find_if(std::begin(devices), std::end(devices), [&](entt::entity entity)
         {
-            const libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
+            const Device& device = devices.get<Device>(entity);
 
-            return f(deviceDescriptor);
+            return f(device);
         });
 
-        return result == std::end(desciptors) ? entt::null : *result;
+        return result == std::end(devices) ? entt::null : *result;
     }
 
     // Set up to be run periodically on its own thread.

@@ -32,19 +32,19 @@ void printDevices(const entt::registry& registry)
 
     registry.each([&](const entt::entity e)
     {
-        const auto& deviceDescriptor = registry.get<libusb_device_descriptor>(e);
+        const auto& device = registry.get<LibUsb::Device>(e);
         const moducom::libusb::ConfigDescriptor* _config = registry.try_get<moducom::libusb::ConfigDescriptor>(e);
 
         std::cout << "Device: ";
 
         std::cout << std::hex;
         std::cout << std::setw(4);
-        std::cout << deviceDescriptor.idVendor << ":";
+        std::cout << device.vid() << ":";
         std::cout << std::setw(4);
-        std::cout << deviceDescriptor.idProduct;
+        std::cout << device.pid();
 
-        std::cout << " - class=" << (int)deviceDescriptor.bDeviceClass;
-        std::cout << ", configs=" << (int)deviceDescriptor.bNumConfigurations;
+        std::cout << " - class=" << (int)device.device_descriptor.bDeviceClass;
+        std::cout << ", configs=" << (int)device.device_descriptor.bNumConfigurations;
 
         std::cout << std::dec;
         std::cout << std::endl;
@@ -98,14 +98,14 @@ TEST_CASE("usb")
         registry.emplace<moducom::services::Description>(libusb_entity, LibUsb::description());
         registry.emplace<LibUsb*>(libusb_entity, &libusb);
 
-        auto desciptors = libusb.registry.view<libusb_device_descriptor>();
+        auto devices = libusb.registry.view<LibUsb::Device>();
 
-        auto result = std::find_if(std::begin(desciptors), std::end(desciptors), [&](auto& entity)
+        auto result = std::find_if(std::begin(devices), std::end(devices), [&](auto& entity)
         {
-            libusb_device_descriptor& deviceDescriptor = desciptors.get<libusb_device_descriptor>(entity);
+            const auto& device = devices.get<LibUsb::Device>(entity);
 
-            if(deviceDescriptor.idVendor == htole16(CP210x::VID) &&
-               deviceDescriptor.idProduct == htole16(CP210x::PID))
+            if(device.vid() == CP210x::VID &&
+                device.pid() == CP210x::PID)
             {
                 return true;
             }
@@ -159,11 +159,11 @@ TEST_CASE("usb")
 
         printDevices(libusb.registry);
 
-        entt::entity deviceEntity = libusb.findDevice([](const libusb_device_descriptor& d)
+        entt::entity deviceEntity = libusb.findDevice([](const LibUsb::Device& d)
         {
             return
-                d.idVendor == htole16(CP210x::VID) &&
-                d.idProduct == htole16(CP210x::PID);
+                d.vid() == CP210x::VID &&
+                d.pid() == CP210x::PID;
         });
 
 #if ENABLE_LIVE_USB_TEST

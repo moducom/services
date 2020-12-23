@@ -9,12 +9,6 @@ inline void LibUsb::add_device(libusb_device* device)
 
     entt::entity id = registry.create();
 
-    auto& device_descriptor = registry.emplace<libusb_device_descriptor>(id);
-
-    libusb_get_device_descriptor(device, &device_descriptor);
-
-    bool correctType = device_descriptor.bDescriptorType == LIBUSB_DT_DEVICE;
-
     try
     {
         libusb::ConfigDescriptor config = d.get_active_config_descriptor();
@@ -28,10 +22,6 @@ inline void LibUsb::add_device(libusb_device* device)
 
     d.ref();
     registry.emplace<libusb_device*>(id, device);
-
-    uint8_t port_number = libusb_get_port_number(device);
-
-    registry.emplace<uint8_t>(id, port_number);
 
     {
         // Gets LIBUSB_ERROR_ACCESS
@@ -70,17 +60,13 @@ inline void LibUsb::remove_device(libusb::Device d, entt::entity deviceId)
 
 inline void LibUsb::remove_device(libusb_device* device)
 {
-    libusb::Device d(device);
-
-    auto devices = registry.view<libusb_device*>();
-
-    auto result = std::find_if(std::begin(devices), std::end(devices), [&](entt::entity entity)
+    entt::entity result = findDevice([&](const Device& d)
     {
-        return devices.get(entity) == device;
+        return *d.device == device;
     });
 
-    if(result != std::end(devices))
-        remove_device(d, *result);
+    if(result != entt::null)
+        remove_device(device, result);
 }
 
 // NOTE: Can't truly do a refresh here yet because we have to free device list too
