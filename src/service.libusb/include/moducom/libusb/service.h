@@ -139,7 +139,7 @@ struct Device : public services::Device
     typedef services::Device base_type;
     typedef TDeviceTraits traits_type;
 
-    libusb::Transfer transfers[sizeof(traits_type::endpoints)];
+    Scoped<libusb::Transfer> transfers[sizeof(traits_type::endpoints)];
 
     Device(libusb::Device device) :
         base_type(device)

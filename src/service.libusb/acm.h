@@ -45,7 +45,7 @@ class LibUsbTransferBase : public agents::Agent
 protected:
     typedef agents::Agent base_type;
 
-    moducom::libusb::Transfer transfer;
+    Scoped<libusb::Transfer> transfer;
 
     entt::sigh<void (moducom::libusb::Buffer)> sighTransferCompleted;
 
@@ -63,15 +63,15 @@ public:
     bool start()
     {
         status(Status::Starting);
-        libusb_transfer* t = transfer;
-        t->buffer = transfer.device_handle().alloc(transfer.length());
+        libusb_transfer* t = *transfer;
+        t->buffer = transfer->device_handle().alloc(transfer->length());
 
         dmaBufferMode = t->buffer != nullptr;
 
         if(!dmaBufferMode)
-            t->buffer = (unsigned char*) malloc(transfer.length());
+            t->buffer = (unsigned char*) malloc(transfer->length());
 
-        libusb_error error = transfer.submit();
+        libusb_error error = transfer->submit();
 
         if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
 
@@ -85,7 +85,7 @@ public:
     void stop()
     {
         status(Status::Stopping);
-        transfer.cancel();
+        transfer->cancel();
     }
 };
 
@@ -107,7 +107,7 @@ public:
             base_type(eh),
             sinkTransferCompleted{sighTransferCompleted}
     {
-        transfer.fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
+        transfer->fill_bulk_transfer(deviceHandle, endpoint, nullptr, length,
                                     _transferCallback, this, timeout);
         eh.registry.emplace<entt::sink<void (libusb::Buffer)>>(eh.entity,
                                                                sighTransferCompleted);
@@ -122,9 +122,9 @@ protected:
 
     libusb::DeviceHandle deviceHandle;
 
-    libusb::Transfer in;
-    libusb::Transfer out;
-    libusb::Transfer control;
+    Scoped<libusb::Transfer> in;
+    Scoped<libusb::Transfer> out;
+    Scoped<libusb::Transfer> control;
 public:
     entt::sink<void (libusb::Buffer)> sinkTransferReceived;
 
@@ -132,7 +132,7 @@ public:
         deviceHandle(deviceHandle),
         sinkTransferReceived{sighTransferReceived}
     {
-        libusb_transfer* t = control;
+        libusb_transfer* t = *control;
 
         // auto free() buffers for control transfers
         t->flags |= LIBUSB_TRANSFER_FREE_BUFFER;
@@ -183,15 +183,15 @@ public:
                                   (uint8_t)AcmRequestTypeType::Type1,
                                   (uint8_t)AcmRequestType::SET_LINE_CODING,
                                   0, 0, sizeof(AcmLineCoding));
-        control.fill_control_transfer(deviceHandle, raw, _transferCallback, this, 1000);
+        control->fill_control_transfer(deviceHandle, raw, _transferCallback, this, 1000);
 
         // DEBT: Need to pay attention to any errors
-        out.submit();
+        out->submit();
     }
 
     void sendCharacter(char c)
     {
-        libusb_transfer* t = out;
+        libusb_transfer* t = *out;
 
         if(t->status != LIBUSB_TRANSFER_COMPLETED)
         {
@@ -200,7 +200,7 @@ public:
 
         *t->buffer = c;
 
-        out.submit();
+        out->submit();
     }
 };
 

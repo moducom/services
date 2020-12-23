@@ -4,14 +4,14 @@ namespace moducom { namespace services {
 
 void AcmLibUsb::transferCallbackBulk(libusb_transfer* transfer)
 {
-    if(transfer == in)
+    if(transfer == *in)
     {
         // DEBT: Have to do this first because we only are using one buffer at the moment
         sighTransferReceived.publish(libusb::Buffer{
             transfer->buffer,
             transfer->actual_length});
 
-        in.submit();
+        in->submit();
     }
 }
 
@@ -44,10 +44,10 @@ inline void AcmLibUsb::transferCallback(libusb_transfer* transfer)
         {
             // We expect input to timeout frequently as we wait for something to appear,
             // so merely re-queue
-            if(transfer == in)
+            if(transfer == *in)
             {
                 // DEBT: 90% sure we can resubmit right here in the callback.  Not 100% sure.
-                in.submit();
+                in->submit();
             }
         }
 
@@ -96,19 +96,19 @@ AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint
 
         // set up bulk transfers for in and out.  Leaving buffer as null as we
         // play some games to assign that manually below
-        out.fill_bulk_transfer(deviceHandle, outEndpoint, nullptr, 1,
+        out->fill_bulk_transfer(deviceHandle, outEndpoint, nullptr, 1,
                                _transferCallback, this, 1000);
 
-        in.fill_bulk_transfer(deviceHandle, inEndpoint, nullptr, inSize,
+        in->fill_bulk_transfer(deviceHandle, inEndpoint, nullptr, inSize,
                               _transferCallback, this, 0);
 
-        libusb_transfer* t = out;
+        libusb_transfer* t = *out;
 
         t->buffer = deviceHandle.alloc(1);
 
         if((dmaBufferMode = (t->buffer != nullptr)))
         {
-            t = in;
+            t = *in;
 
             t->buffer = deviceHandle.alloc(inSize);
         }
@@ -116,13 +116,13 @@ AcmLibUsb::AcmLibUsb(libusb::DeviceHandle deviceHandle, uint8_t inEndpoint, uint
         {
             t->buffer = (unsigned char*) malloc(1);
 
-            t = in;
+            t = *in;
 
             t->buffer = (unsigned char*) malloc(inSize);
         }
 
         // kick off listening
-        libusb_error error = in.submit();
+        libusb_error error = in->submit();
 
         if(error != LIBUSB_SUCCESS) throw libusb::Exception(error);
     }
@@ -136,16 +136,16 @@ AcmLibUsb::~AcmLibUsb()
         // DEBT: These must be adjustable
         uint16_t inSize = 64;
 
-        in.cancel();
-        out.cancel();
+        in->cancel();
+        out->cancel();
 
-        libusb_transfer* t = out;
+        libusb_transfer* t = *out;
 
         if(dmaBufferMode)
         {
             deviceHandle.free(t->buffer, 1);
 
-            t = in;
+            t = *in;
 
             deviceHandle.free(t->buffer, inSize);
         }
@@ -153,7 +153,7 @@ AcmLibUsb::~AcmLibUsb()
         {
             free(t->buffer);
 
-            t = in;
+            t = *in;
 
             free(t->buffer);
         }
@@ -169,13 +169,13 @@ inline void LibUsbTransfer::transferCallbackBulk(libusb_transfer* transfer)
     if(transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
     {
         int l = transfer->actual_length;
-        this->transfer.submit();
+        this->transfer->submit();
         return;
     }
     else if(transfer->status == LIBUSB_TRANSFER_OVERFLOW)
     {
         int l = transfer->actual_length;
-        this->transfer.submit();
+        this->transfer->submit();
         return;
     }
 
@@ -183,14 +183,14 @@ inline void LibUsbTransfer::transferCallbackBulk(libusb_transfer* transfer)
             transfer->buffer,
             transfer->actual_length});
 
-    this->transfer.submit();
+    this->transfer->submit();
 }
 
 
 inline void LibUsbTransfer::transferCallbackCancel(libusb_transfer* transfer)
 {
     if(dmaBufferMode)
-        this->transfer.device_handle().free(transfer->buffer, this->transfer.length());
+        this->transfer->device_handle().free(transfer->buffer, this->transfer->length());
     else
         free(transfer->buffer);
 
