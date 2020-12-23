@@ -101,9 +101,6 @@ void LibUsb::hotplug_callback(libusb_context* context, libusb_device* device,
     }
 }
 
-// NOTE: may be phasing out this intensive use of registry awareness *inside* agents.  Not sure
-// yet
-static entt::registry dummyRegistry;
 
 void LibUsb::init()
 {
@@ -114,7 +111,8 @@ void LibUsb::init()
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
     {
         context.hotplug_register_callback(
-                LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, // | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, // "It is the user's responsibility to call libusb_close"
+                (libusb_hotplug_event)
+                        (LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT),
                 LIBUSB_HOTPLUG_ENUMERATE,
                 LIBUSB_HOTPLUG_MATCH_ANY,
                 LIBUSB_HOTPLUG_MATCH_ANY,
