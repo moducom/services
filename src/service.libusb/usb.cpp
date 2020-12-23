@@ -47,8 +47,6 @@ inline void LibUsb::remove_device(entt::entity deviceId)
         //config->free();
     }
 
-    registry.remove_all(deviceId);
-    registry.destroy(deviceId);
 
 }
 
@@ -154,12 +152,8 @@ LibUsb::~LibUsb()
     if(libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG ))
         context.hotplug_deregister_callback(hotplug_callback_handle);
 
-    // DEBT: All because our wrappers don't auto-free themselves, so we can't do
-    // a registry.remove_all or let it auto destruct
-    for(entt::entity entity : registry.view<Device>())
-    {
-        remove_device(entity);
-    }
+    auto view = registry.view<Device>();
+    registry.destroy(view.begin(), view.end());
 
     context.exit();
 }
