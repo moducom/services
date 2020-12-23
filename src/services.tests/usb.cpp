@@ -5,6 +5,7 @@
 #include <service.libusb/acm.h>
 
 #include <moducom/libusb/service.hpp>
+#include <moducom/libusb/diagnostic.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -35,33 +36,7 @@ void printDevices(const entt::registry& registry)
         const auto& device = registry.get<LibUsb::Device>(e);
         const moducom::libusb::ConfigDescriptor* _config = registry.try_get<moducom::libusb::ConfigDescriptor>(e);
 
-        std::cout << "Device: ";
-
-        std::cout << std::hex;
-        std::cout << std::setw(4);
-        std::cout << device.vid() << ":";
-        std::cout << std::setw(4);
-        std::cout << device.pid();
-
-        std::cout << " - class=" << (int)device.descriptor().bDeviceClass;
-        std::cout << ", configs=" << (int)device.descriptor().bNumConfigurations;
-
-        std::cout << std::dec;
-        std::cout << std::endl;
-
-        if (_config != nullptr)
-        {
-            const libusb_config_descriptor* config = *_config;
-
-            for (int i = 0; i < config->bNumInterfaces; i++)
-            {
-                const libusb_interface& interface = config->interface[i];
-                std::cout << "  interface = " << (int)interface.altsetting->bInterfaceNumber << std::endl;
-                std::cout << "  class     = " << (int)interface.altsetting->bInterfaceClass << std::endl;
-                std::cout << "  subclass  = " << (int)interface.altsetting->bInterfaceSubClass << std::endl;
-                std::cout << "  protocol  = " << (int)interface.altsetting->bInterfaceProtocol << std::endl;
-            }
-        }
+        moducom::diagnostic::dump(std::cout, device, _config);
     });
 }
 
