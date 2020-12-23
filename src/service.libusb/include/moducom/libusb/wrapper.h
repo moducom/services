@@ -365,6 +365,16 @@ public:
         return DeviceHandle::open(device);
     }
 
+    uint8_t get_address()
+    {
+        return libusb_get_device_address(device);
+    }
+
+    libusb_speed get_speed()
+    {
+        return (libusb_speed) libusb_get_device_speed(device);
+    }
+
     ConfigDescriptor get_active_config_descriptor()
     {
         libusb_config_descriptor* config;
