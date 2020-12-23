@@ -41,7 +41,6 @@ struct Buffer
     int length;
 };
 
-// only wrapper class which auto allocs/frees itself
 class TransferBase
 {
 protected:
@@ -52,19 +51,9 @@ protected:
     {}
 
 public:
-    TransferBase(int iso_packets = 0) : transfer(libusb_alloc_transfer(iso_packets))
-    {
-
-    }
-
     operator libusb_transfer* const () const
     {
         return transfer;
-    }
-
-    ~TransferBase()
-    {
-        libusb_free_transfer(transfer);
     }
 
     int length() const { return transfer->length; }
@@ -508,11 +497,6 @@ class Transfer : public TransferBase
     }
 
 public:
-    Transfer(int iso_packets = 0) : TransferBase(iso_packets)
-    {
-
-    }
-
     DeviceHandle device_handle() const
     {
         return transfer->dev_handle;

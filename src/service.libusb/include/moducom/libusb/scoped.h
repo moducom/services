@@ -99,7 +99,7 @@ public:
 
     ~Scoped()
     {
-        //transfer.free();
+        transfer.free();
     }
 
     libusb::Transfer& operator *() { return transfer; }
