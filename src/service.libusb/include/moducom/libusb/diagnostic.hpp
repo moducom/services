@@ -22,6 +22,7 @@ inline void dump(std::ostream& out,
 
     out << " - class=" << (int)device.descriptor().bDeviceClass;
     out << ", configs=" << (int)device.descriptor().bNumConfigurations;
+    out << ", ver=" << (int)device.releaseNumber();
 
     out << std::dec;
     out << std::endl;
