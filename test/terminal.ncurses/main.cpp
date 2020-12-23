@@ -98,8 +98,8 @@ void found(entt::registry& r, entt::entity e)
 #endif
 
     // DEBT: Not endian-friendly, but I lost our little helper for that
-    if(device.device_descriptor.idVendor == CP210xTraits::VID &&
-       device.device_descriptor.idProduct == CP210xTraits::PID)
+    if(device.vid() == CP210xTraits::VID &&
+       device.pid() == CP210xTraits::PID)
     {
         session = new Session(*device.device);
     }

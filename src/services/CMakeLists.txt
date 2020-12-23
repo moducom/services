@@ -12,6 +12,7 @@ add_library(${PROJECT_NAME}
 
         include/moducom/internal/argtype.h
 
+        include/moducom/scoped.h
         include/moducom/semver.h
         include/moducom/portable_endian.h
 
