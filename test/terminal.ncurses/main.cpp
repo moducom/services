@@ -14,7 +14,7 @@ typedef moducom::libusb::services::Transfer
 
 class Session
 {
-    moducom::libusb::Guard<moducom::libusb::DeviceHandle> handle;
+    moducom::Scoped<moducom::libusb::DeviceHandle> handle;
     Transfer in;
 
     void render(moducom::libusb::Transfer& transfer)

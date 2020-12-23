@@ -74,8 +74,14 @@ namespace internal {
 
 class TransferEnttImpl
 {
+    template <class TImpl>
+    friend class moducom::libusb::services::Transfer;
+
     entt::sigh<void (libusb::Transfer&)> sighCompleted;
     entt::sigh<void (libusb::Transfer&)> sighStatus;
+
+    void onCompleted(TransferBase& parent, libusb_transfer* t);
+    void onStatus(TransferBase& parent, libusb_transfer* t);
 
 public:
     entt::sink<void (libusb::Transfer&)> sinkCompleted;
@@ -85,11 +91,6 @@ public:
         sinkCompleted{sighCompleted},
         sinkStatus{sighStatus}
     {}
-
-    // template friend lets us get here
-private:
-    void onCompleted(TransferBase& parent, libusb_transfer* t);
-    void onStatus(TransferBase& parent, libusb_transfer* t);
 };
 
 }

@@ -9,96 +9,97 @@
 
 namespace moducom {
 
-namespace libusb {
-
-
 
 template <class T>
-struct Guard;
+struct Scoped;
 
 template <>
-class Guard<DeviceHandle>
+class Scoped<libusb::DeviceHandle>
 {
-    DeviceHandle handle;
+    typedef libusb::DeviceHandle element_type;
+
+    element_type handle;
 
 public:
-    Guard(libusb_device* device) :
-        handle(DeviceHandle::open(device))
+    Scoped(libusb_device* device) :
+        handle(element_type::open(device))
     {
     }
 
-    DeviceHandle* operator ->() { return &handle; }
-    DeviceHandle& operator *() { return handle; }
+    element_type* operator ->() { return &handle; }
+    element_type& operator *() { return handle; }
 
-    ~Guard()
+    ~Scoped()
     {
         handle.close();
     }
 };
 
 template <>
-class Guard<Device>
+class Scoped<libusb::Device>
 {
-    Device device;
+    typedef libusb::Device element_type;
+
+    element_type device;
 
 public:
-    Guard(libusb_device* device) :
+    Scoped(libusb_device* device) :
         device(device)
     {
         this->device.ref();
     }
 
-    Guard(Guard&& moveFrom) :
+    Scoped(Scoped&& moveFrom) :
         device(std::move(moveFrom.device))
     {
         // since libusb::Device doesn't autoref, we do it manually -
-        // this way Guard dtor which now runs twice (moved copy + original)
+        // this way Scoped dtor which now runs twice (moved copy + original)
         // will have device ref'd twice too to match
         this->device.ref();
     }
 
-    Guard& operator=(Guard&& moveFrom)
+    Scoped& operator=(Scoped&& moveFrom)
     {
         // if move copying over an existing device, be sure to unref since it won't be pointed
         // to when 'this' dtor runs
         device.unref();
-        new (this) Guard(std::move(moveFrom));
+        new (this) Scoped(std::move(moveFrom));
         return *this;
     }
 
-    ~Guard()
+    ~Scoped()
     {
         this->device.unref();
     }
 
-    Device* operator ->() { return &device; }
-    Device& operator *() { return device; }
+    element_type* operator ->() { return &device; }
+    element_type& operator *() { return device; }
 };
 
 
 template <>
-class Guard<libusb::Transfer>
+class Scoped<libusb::Transfer>
 {
+    typedef libusb::Transfer element_type;
+
     libusb::Transfer transfer;
 
 public:
     // Temporary - eventually transfer will be a thinner wrapper and we won't
     // pass iso_packets in but rather the allocated transfer
-    Guard(int iso_packets = 0) :
+    Scoped(int iso_packets = 0) :
         transfer(libusb::Transfer::alloc(iso_packets))
     {
 
     }
 
-    ~Guard()
+    ~Scoped()
     {
         //transfer.free();
     }
 
     libusb::Transfer& operator *() { return transfer; }
 };
-
-}
 
 namespace services {
 
@@ -133,7 +134,7 @@ public:
 
     struct Device
     {
-        libusb::Guard<libusb::Device> device;
+        Scoped<libusb::Device> device;
         libusb_device_descriptor device_descriptor;
         //libusb::ConfigDescriptor config;
 
