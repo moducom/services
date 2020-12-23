@@ -5,7 +5,10 @@
 #include <entt/entt.hpp>
 
 #include <moducom/libusb/service.hpp>
+#include <moducom/libusb/diagnostic.hpp>
 #include <moducom/libusb.h>
+
+#include <signal.h>
 
 #define ENABLE_NCURSES 0
 #define ENABLE_GETINFO 0
@@ -71,6 +74,16 @@ public:
 
 Session* session = nullptr;
 
+void signal_handler(int signum)
+{
+    std::cerr << std::endl;
+    std::cerr << "Stop signal detected.  Exiting..." << std::endl;
+
+    if(session) delete session;
+
+    exit(signum);
+}
+
 void arrived(entt::registry& r, entt::entity e)
 {
     auto& device = r.get<moducom::services::LibUsb::Device>(e);
@@ -134,6 +147,8 @@ int main()
     refresh();
 
     //std::cout << "Hello, World!" << std::endl;
+
+    signal(SIGINT, signal_handler);
 
     timeout(0);
     while(getch() != 'x')
