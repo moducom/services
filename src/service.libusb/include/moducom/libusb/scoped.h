@@ -76,6 +76,7 @@ public:
     }
 
     element_type* operator ->() { return &device; }
+    const element_type* operator ->() const { return &device; }
     element_type& operator *() { return device; }
     const element_type& operator *() const { return device; }
 };

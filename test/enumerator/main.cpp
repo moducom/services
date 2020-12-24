@@ -18,14 +18,27 @@ int main()
     {
         const moducom::libusb::ConfigDescriptor* _config = libusb.registry.try_get<moducom::libusb::ConfigDescriptor>(e);
 
+        // NOTE: Not putting this into dump because occasionally a glitch seems to happen which
+        // disables device from running after - might have just been bad housekeeping on device handle
+        // though
+        try
+        {
+            Scoped<libusb::DeviceHandle> dh = device.open();
+
+            dh->set_auto_detach_kernel_driver(true);
+
+            std::cout << std::endl;
+            std::cout << "Manufacturer: ";
+            std::cout << dh->get_string_descriptor(device.descriptor().iManufacturer) << std::endl;
+            std::cout << "Product: " << dh->get_string_descriptor(device.descriptor().iProduct);
+            std::cout << std::endl;
+        }
+        catch(const libusb::Exception& e)
+        {
+            //std::clog << "Couldn't open device addr=" << (int)device.address() << std::endl;
+        }
+
         moducom::diagnostic::dump(std::cout, device, _config);
-
-        /* various access issues
-        Scoped<libusb::DeviceHandle> dh = device.open();
-
-        dh->set_auto_detach_kernel_driver(true);
-
-        std::cout << "Vendor: " << dh->get_string_descriptor(device.descriptor().idVendor); */
     });
 
     return 0;

@@ -354,7 +354,7 @@ public:
         return DeviceHandle::open(device);
     }
 
-    uint8_t get_address()
+    uint8_t get_address() const
     {
         return libusb_get_device_address(device);
     }

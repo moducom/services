@@ -81,6 +81,11 @@ public:
         {
             return device_descriptor;
         }
+
+        const uint8_t address() const
+        {
+            return device->get_address();
+        }
     };
 
 
