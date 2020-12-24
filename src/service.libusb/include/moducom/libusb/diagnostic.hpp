@@ -5,9 +5,9 @@
 #include "../libusb.h"
 #include <iomanip>
 
+// DEBT: Almost definitely better to make this a .cpp, tossing in .hpp just to get it done
 namespace moducom { namespace diagnostic {
 
-// DEBT: Almost definitely better to make this a .cpp, tossing in .hpp just to get it done
 inline void dump(std::ostream& out,
                  const services::LibUsb::Device& device,
                  const moducom::libusb::ConfigDescriptor* _config)
@@ -41,6 +41,18 @@ inline void dump(std::ostream& out,
             out << "  protocol  = " << (int)interface.altsetting->bInterfaceProtocol << std::endl;
         }
     }
+}
+
+inline void dump(std::ostream& out,
+                 const services::LibUsb::Device& device,
+                 libusb::DeviceHandle dh)
+{
+    out << std::endl;
+    out << "Manufacturer: ";
+    out << dh.get_string_descriptor(device.descriptor().iManufacturer) << std::endl;
+    out << "Product: " << dh.get_string_descriptor(device.descriptor().iProduct);
+    out << std::endl;
+
 }
 
 }}
