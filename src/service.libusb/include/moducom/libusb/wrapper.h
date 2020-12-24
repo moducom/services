@@ -289,6 +289,20 @@ public:
 
         if(result != LIBUSB_SUCCESS) throw Exception(result);
     }
+
+    /// "You could formulate your own control request to obtain this information,
+    /// but this function has the advantage that it may be able to retrieve the information from
+    /// operating system caches (no I/O involved)." - libusb docs
+    /// \return
+    int get_configuration() const
+    {
+        int config;
+        auto result = (libusb_error) libusb_get_configuration(device_handle, &config);
+
+        if(result != LIBUSB_SUCCESS) throw Exception(result);
+
+        return config;
+    }
 };
 
 
@@ -339,6 +353,9 @@ public:
     Device(Device&&) = default;
     Device(const Device&) = default;
 
+    // normally not needed, but parent can return a null so use this in that case
+    bool valid() const { return device != nullptr; }
+
     void ref()
     {
         libusb_ref_device(device);
@@ -354,9 +371,19 @@ public:
         return DeviceHandle::open(device);
     }
 
+    uint8_t get_bus_number() const
+    {
+        return libusb_get_bus_number(device);
+    }
+
     uint8_t get_address() const
     {
         return libusb_get_device_address(device);
+    }
+
+    Device get_parent() const
+    {
+        return libusb_get_parent(device);
     }
 
     libusb_speed get_speed()

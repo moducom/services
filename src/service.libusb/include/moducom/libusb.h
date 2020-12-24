@@ -82,6 +82,11 @@ public:
             return device_descriptor;
         }
 
+        const uint8_t bus_number() const
+        {
+            return device->get_bus_number();
+        }
+
         const uint8_t address() const
         {
             return device->get_address();
