@@ -10,6 +10,8 @@ add_library(${PROJECT_NAME}
         library.cpp library.h
         service.hpp services.h
 
+        include/moducom/experimental/bitenum.h
+
         include/moducom/internal/argtype.h
 
         include/moducom/scoped.h

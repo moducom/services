@@ -1,5 +1,7 @@
 #include "catch2/catch.hpp"
+
 #include "services.h"
+#include <moducom/experimental/bitenum.h>
 
 using namespace moducom::services;
 
@@ -172,6 +174,29 @@ TEST_CASE("misc")
 
                 REQUIRE(!std::is_reference_v<std::tuple_element<0, tuple_type>::type>);
             }
+        }
+    }
+    SECTION("experimental")
+    {
+        SECTION("BitEnum")
+        {
+            enum class TestEnum
+            {
+                Val1,
+                Val2,
+                Val3
+            };
+
+            moducom::experimental::BitEnum<TestEnum> be;
+
+            be.set(TestEnum::Val1);
+            REQUIRE(!be.multi());
+            REQUIRE(be.contains(TestEnum::Val1));
+            REQUIRE(!be.contains(TestEnum::Val2));
+            be.set(TestEnum::Val2);
+            REQUIRE(be.multi());
+            REQUIRE(be.contains(TestEnum::Val1));
+            REQUIRE(be.contains(TestEnum::Val2));
         }
     }
 }
