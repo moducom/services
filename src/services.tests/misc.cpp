@@ -184,19 +184,32 @@ TEST_CASE("misc")
             {
                 Val1,
                 Val2,
-                Val3
+                Val3,
+                Max
             };
 
             moducom::experimental::BitEnum<TestEnum> be;
 
-            be.set(TestEnum::Val1);
-            REQUIRE(!be.multi());
-            REQUIRE(be.contains(TestEnum::Val1));
-            REQUIRE(!be.contains(TestEnum::Val2));
-            be.set(TestEnum::Val2);
-            REQUIRE(be.multi());
-            REQUIRE(be.contains(TestEnum::Val1));
-            REQUIRE(be.contains(TestEnum::Val2));
+            SECTION("basic usage")
+            {
+                be.set(TestEnum::Val1);
+                //REQUIRE(!be.multi());
+                REQUIRE(be.contains(TestEnum::Val1));
+                REQUIRE(!be.contains(TestEnum::Val2));
+                be.set(TestEnum::Val2);
+                //REQUIRE(be.multi());
+                REQUIRE(be.contains(TestEnum::Val1));
+                REQUIRE(be.contains(TestEnum::Val2));
+            }
+            SECTION("fun ctor")
+            {
+                be = moducom::experimental::BitEnum<TestEnum>(
+                    TestEnum::Val1,
+                    TestEnum::Val2);
+
+                REQUIRE(be.contains(TestEnum::Val1));
+                REQUIRE(be.contains(TestEnum::Val2));
+            }
         }
     }
 }

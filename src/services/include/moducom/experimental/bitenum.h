@@ -8,7 +8,7 @@ namespace moducom { namespace experimental {
 /// \tparam TEnum
 /// \tparam N
 template <typename TEnum, std::size_t N = sizeof(int) * 8>
-struct BitEnum
+struct BitEnumOld
 {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     static constexpr int msb = N - 1;
@@ -26,7 +26,7 @@ struct BitEnum
         uint_type enum_;
     };
 
-    BitEnum() : enum_(0)
+    BitEnumOld() : enum_(0)
     {
 
     }
@@ -68,9 +68,38 @@ struct BitEnum
         }
     }
 
-    BitEnum& operator=(TEnum e)
+    BitEnumOld& operator=(TEnum e)
     {
         enum_ = e + 1;
+    }
+};
+
+template <typename TEnum, std::size_t N = (std::size_t)TEnum::Max>
+class BitEnum
+{
+    std::bitset<N> bits_;
+
+    typedef unsigned uint_type;
+
+    void set() const {}
+
+public:
+    template <class ...TArgs>
+    void set(TEnum e, TArgs&&...args)
+    {
+        bits_[(uint_type)e] = true;
+        set(std::forward<TArgs>(args)...);
+    }
+
+    template <class ...TArgs>
+    BitEnum(TArgs&&...args)
+    {
+        set(std::forward<TArgs>(args)...);
+    }
+
+    bool contains(TEnum e) const
+    {
+        return bits_[(uint_type)e];
     }
 };
 
