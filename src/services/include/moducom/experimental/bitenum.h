@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <type_traits>
 
 namespace moducom { namespace experimental {
 
@@ -74,9 +75,27 @@ struct BitEnumOld
     }
 };
 
-template <typename TEnum, std::size_t N = (std::size_t)TEnum::Max>
+namespace internal {
+
+/* FIX: Enable this -- right now doesn't work like this, says call is ambiguous
+ * Trying to do SFINAE
+template <typename TEnum>
+constexpr std::size_t enum_max() { return sizeof(int) * 8; } */
+
+template <typename TEnum, std::enable_if_t<((int)TEnum::Max != 0), bool> = true>
+constexpr std::size_t enum_max() { return (std::size_t)TEnum::Max; }
+
+
+
+
+}
+
+template <typename TEnum, std::size_t _N = 0>
 class BitEnum
 {
+    static constexpr std::size_t N =
+        _N == 0 ? internal::enum_max<TEnum>() : _N;
+
     std::bitset<N> bits_;
 
     typedef unsigned uint_type;
